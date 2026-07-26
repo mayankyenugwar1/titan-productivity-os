@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { registerSW } from "virtual:pwa-register";
 
 import "./styles/index.css";
 import App from "./App";
@@ -12,15 +13,16 @@ document.documentElement.classList.add("dark");
 // Initialize Production Telemetry & Monitoring Handlers
 initProductionMonitoring();
 
-// Service Worker Registration for PWA & Desktop Installability
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((reg) => console.log("[TITAN PWA] Service worker registered: ", reg.scope))
-      .catch((err) => console.warn("[TITAN PWA] Service worker registration failed: ", err));
-  });
-}
+// Automatic PWA Service Worker Registration & Update Detection
+const updateSW = registerSW({
+  onNeedRefresh() {
+    console.log("[TITAN PWA] New version available. Refreshing service worker...");
+    void updateSW(true);
+  },
+  onOfflineReady() {
+    console.log("[TITAN PWA] App is ready for offline usage.");
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
