@@ -5,7 +5,9 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { useHabitStore } from "@/store/habitStore";
+import { useHabitStore } from "@/store/missionStore";
+import type { Habit } from "@/features/missions/types";
+import { ICON_SIZES, TitanCard } from "@/components/ui";
 
 export default function StatsCards() {
   const {
@@ -16,13 +18,13 @@ export default function StatsCards() {
   } = useHabitStore();
 
   const completedToday = habits.filter(
-    (habit) => habit.completed
+    (habit: Habit) => habit.completed
   ).length;
 
   const totalMissions = habits.length;
 
   const activeMissions = habits.filter(
-    (habit) => !habit.completed
+    (habit: Habit) => !habit.completed
   ).length;
 
   const level = Math.floor(totalXP / 500) + 1;
@@ -45,7 +47,7 @@ export default function StatsCards() {
       icon: TrendingUp,
     },
     {
-      title: "STREAK",
+      title: "COMBAT STREAK",
       value: `${streak} Days`,
       subtitle: "Keep the momentum alive",
       icon: Flame,
@@ -78,25 +80,8 @@ export default function StatsCards() {
         const Icon = stat.icon;
 
         return (
-          <div
-            key={stat.title}
-            className="
-              group
-              relative
-              overflow-hidden
-              rounded-3xl
-              border
-              border-zinc-800
-              bg-zinc-900/60
-              p-6
-              transition-all
-              duration-300
-              hover:-translate-y-1
-              hover:border-yellow-400/30
-              hover:shadow-[0_0_30px_rgba(250,204,21,0.08)]
-            "
-          >
-            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-yellow-400/5 blur-3xl transition-all duration-300 group-hover:bg-yellow-400/10" />
+          <TitanCard key={stat.title} variant="interactive" padding="md" className="relative overflow-hidden">
+            <div className="absolute -right-8 -top-8 size-24 rounded-full bg-yellow-400/5 blur-3xl transition-all duration-300 group-hover:bg-yellow-400/10" />
 
             <div className="relative">
               <div className="flex items-center justify-between">
@@ -105,7 +90,7 @@ export default function StatsCards() {
                 </span>
 
                 <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/10 p-2">
-                  <Icon className="h-5 w-5 text-yellow-400 transition-transform duration-300 group-hover:scale-110" />
+                  <Icon size={ICON_SIZES.md} className="text-yellow-400 transition-transform duration-300 group-hover:scale-110" />
                 </div>
               </div>
 
@@ -117,7 +102,7 @@ export default function StatsCards() {
                 {stat.subtitle}
               </p>
             </div>
-          </div>
+          </TitanCard>
         );
       })}
     </section>

@@ -1,31 +1,33 @@
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
+import { TITAN_CARD_STYLES } from "./tokens";
 
-type TitanCardProps = {
+export type TitanCardProps = HTMLAttributes<HTMLDivElement> & {
+  variant?: keyof typeof TITAN_CARD_STYLES;
+  padding?: "none" | "sm" | "md" | "lg";
   children: ReactNode;
-  className?: string;
+};
+
+const paddingStyles = {
+  none: "p-0",
+  sm: "p-4 sm:p-5",
+  md: "p-6 sm:p-7",
+  lg: "p-8 sm:p-10",
 };
 
 export default function TitanCard({
-  children,
+  variant = "default",
+  padding = "lg",
   className,
+  children,
+  ...props
 }: TitanCardProps) {
   return (
     <div
+      {...props}
       className={cn(
-        `
-        rounded-3xl
-        border
-        border-zinc-800
-        bg-zinc-900/70
-        backdrop-blur-xl
-        p-8
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:border-yellow-400/40
-        hover:shadow-[0_0_30px_rgba(250,204,21,0.08)]
-        `,
+        TITAN_CARD_STYLES[variant],
+        paddingStyles[padding],
         className
       )}
     >

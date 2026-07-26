@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { TitanCard, TitanProgress } from "@/components/ui";
 
 type StatCardProps = {
   title: string;
@@ -9,7 +10,7 @@ type StatCardProps = {
   gain: string;
 };
 
-function StatCard({
+export default function StatCard({
   title,
   value,
   icon: Icon,
@@ -18,25 +19,11 @@ function StatCard({
   gain,
 }: StatCardProps) {
   return (
-    <div
-      className="
-      rounded-3xl
-      border
-      border-yellow-500/20
-      bg-zinc-900/80
-      p-8
-      transition-all
-      duration-300
-      hover:-translate-y-1
-      hover:border-yellow-400/60
-      hover:shadow-[0_0_30px_rgba(255,193,7,0.15)]
-      "
-    >
+    <TitanCard variant="callout" padding="lg">
       <div className="flex items-center justify-between">
         <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">
           {title}
         </p>
-
         <Icon className="h-6 w-6 text-yellow-400" />
       </div>
 
@@ -50,19 +37,14 @@ function StatCard({
           <span>{progress}%</span>
         </div>
 
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-800">
-          <div
-            className="h-full rounded-full bg-yellow-400 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="mt-2">
+          <TitanProgress value={progress} />
         </div>
 
         <p className="mt-3 text-sm text-zinc-400">
           {gain}
         </p>
       </div>
-    </div>
+    </TitanCard>
   );
 }
-
-export default StatCard;

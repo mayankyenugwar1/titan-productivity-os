@@ -1,80 +1,75 @@
-import {
-  Plus,
-  Timer,
-  Dumbbell,
-  BookOpen,
-  ArrowRight,
-} from "lucide-react";
-
-const actions = [
-  {
-    title: "Add Habit",
-    description: "Create a new daily habit",
-    icon: Plus,
-  },
-  {
-    title: "Start Focus",
-    description: "Launch a Pomodoro session",
-    icon: Timer,
-  },
-  {
-    title: "Workout",
-    description: "Log today's workout",
-    icon: Dumbbell,
-  },
-  {
-    title: "Journal",
-    description: "Write today's reflection",
-    icon: BookOpen,
-  },
-];
+import { useNavigate } from "react-router-dom";
+import { BookOpen, Bot, Calendar, FolderKanban, PlusCircle, Sparkles, Zap } from "lucide-react";
+import { TitanButton } from "@/components/ui";
 
 export default function QuickActions() {
+  const navigate = useNavigate();
+
   return (
-    <section className="rounded-[32px] border border-yellow-500/20 bg-zinc-900/60 p-8 backdrop-blur-sm">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.35em] text-yellow-400">
-          ACTION CENTER
-        </p>
-
-        <h2 className="mt-3 text-3xl font-bold text-white">
-          Quick Actions
-        </h2>
-
-        <p className="mt-2 text-zinc-400">
-          Jump into your most-used productivity tools.
-        </p>
+    <div className="rounded-3xl border border-zinc-800/80 bg-[#070709] p-6 shadow-2xl shadow-black font-mono space-y-4">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-[#e5c158]" />
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#e5c158]">
+            GLOBAL QUICK ACTIONS
+          </span>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {actions.map((action) => {
-          const Icon = action.icon;
+      <div className="flex flex-wrap gap-3">
+        <TitanButton
+          size="sm"
+          leftIcon={<PlusCircle className="size-3.5" />}
+          onClick={() => navigate("/habits")}
+        >
+          NEW MISSION
+        </TitanButton>
 
-          return (
-            <button
-              key={action.title}
-              className="group rounded-2xl border border-zinc-800 bg-black/40 p-6 text-left transition-all duration-300 hover:-translate-y-2 hover:border-yellow-400 hover:bg-yellow-400/10"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-400/15">
-                <Icon size={24} className="text-yellow-400" />
-              </div>
+        <TitanButton
+          size="sm"
+          variant="outline"
+          leftIcon={<Calendar className="size-3.5" />}
+          onClick={() => navigate("/calendar")}
+        >
+          TIME OS
+        </TitanButton>
 
-              <h3 className="mt-5 text-xl font-semibold text-white">
-                {action.title}
-              </h3>
+        <TitanButton
+          size="sm"
+          variant="outline"
+          leftIcon={<Bot className="size-3.5" />}
+          onClick={() => navigate("/ai-core")}
+        >
+          AI OS CORE
+        </TitanButton>
 
-              <p className="mt-2 text-sm text-zinc-400">
-                {action.description}
-              </p>
+        <TitanButton
+          size="sm"
+          variant="outline"
+          leftIcon={<BookOpen className="size-3.5" />}
+          onClick={() => navigate("/knowledge")}
+        >
+          KNOWLEDGE VAULT
+        </TitanButton>
 
-              <div className="mt-6 flex items-center gap-2 text-yellow-400 opacity-0 transition-all duration-300 group-hover:opacity-100">
-                <span className="text-sm font-medium">Open</span>
-                <ArrowRight size={16} />
-              </div>
-            </button>
-          );
-        })}
+        <TitanButton
+          size="sm"
+          variant="outline"
+          leftIcon={<FolderKanban className="size-3.5" />}
+          onClick={() => navigate("/projects")}
+        >
+          PROJECTS & GOALS
+        </TitanButton>
+
+        <TitanButton
+          size="sm"
+          variant="secondary"
+          leftIcon={<Zap className="size-3.5" />}
+          onClick={() => navigate("/automation")}
+        >
+          AUTOMATION OS
+        </TitanButton>
       </div>
-    </section>
+    </div>
   );
 }

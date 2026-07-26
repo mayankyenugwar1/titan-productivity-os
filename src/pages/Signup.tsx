@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Lock, Mail, Shield, User, UserCheck } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+import { TitanButton, TitanCard, TitanInput } from "@/components/ui";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -39,81 +41,83 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-6">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+    <div className="flex min-h-screen items-center justify-center bg-[#070708] px-6 py-12">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(250,204,21,0.04),transparent_60%)]" />
 
-        <h1 className="mb-2 text-4xl font-bold text-white">
-          Create Account
-        </h1>
+      <TitanCard variant="default" padding="lg" className="w-full max-w-md border-yellow-500/20">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-yellow-400/25 bg-yellow-400/10 text-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.15)]">
+            <Shield className="size-7" />
+          </div>
+          <h1 className="text-3xl font-black tracking-wider text-yellow-400">
+            TITAN OS
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Register New Operator Record
+          </p>
+        </div>
 
-        <p className="mb-8 text-zinc-400">
-          Join TITAN Productivity OS
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-          <input
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <TitanInput
             type="text"
-            placeholder="Full Name"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none"
+            placeholder="Operator Name"
+            label="Full Name"
+            leftIcon={<User className="size-4" />}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
           />
 
-          <input
+          <TitanInput
             type="text"
-            placeholder="Username"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none"
+            placeholder="Callsign / Handle"
+            label="Username"
+            leftIcon={<UserCheck className="size-4" />}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
           />
 
-          <input
+          <TitanInput
             type="email"
-            placeholder="Email"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none"
+            placeholder="operator@titan.os"
+            label="Email Address"
+            leftIcon={<Mail className="size-4" />}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
 
-          <input
+          <TitanInput
             type="password"
-            placeholder="Password"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none"
+            placeholder="••••••••"
+            label="Security Passcode"
+            leftIcon={<Lock className="size-4" />}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
 
           {error && (
-            <p className="text-sm text-red-500">
+            <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs text-red-300">
               {error}
             </p>
           )}
 
-          <button
-            disabled={loading}
-            className="w-full rounded-lg bg-yellow-500 py-3 font-semibold text-black transition hover:bg-yellow-400 disabled:opacity-60"
-          >
-            {loading ? "Creating..." : "Create Account"}
-          </button>
+          <div className="pt-2">
+            <TitanButton fullWidth size="lg" loading={loading} type="submit">
+              Register Operator
+            </TitanButton>
+          </div>
         </form>
 
-        <p className="mt-6 text-center text-zinc-400">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-semibold text-yellow-400 hover:underline"
-          >
-            Login
+        <p className="mt-8 text-center text-sm text-zinc-400">
+          Already registered?{" "}
+          <Link to="/login" className="font-bold text-yellow-400 hover:underline">
+            Authenticate Operator
           </Link>
         </p>
-      </div>
+      </TitanCard>
     </div>
   );
 }

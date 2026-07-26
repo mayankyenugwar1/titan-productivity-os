@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import { TitanCard, TitanProgress } from "@/components/ui";
 
 const missions = [
   "Workout (90 mins)",
@@ -10,18 +11,16 @@ const missions = [
 
 export default function TodaysMission() {
   return (
-    <div className="rounded-3xl border border-yellow-500/20 bg-zinc-900/70 p-8 backdrop-blur-sm">
+    <TitanCard variant="callout" padding="lg">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <p className="text-yellow-400 uppercase tracking-[0.25em] text-xs">
-            Today's Mission
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-yellow-400">
+            Today's Missions
           </p>
-
           <h2 className="mt-2 text-3xl font-bold text-white">
             Become 1% Better.
           </h2>
         </div>
-
         <div className="text-5xl">🦇</div>
       </div>
 
@@ -32,25 +31,18 @@ export default function TodaysMission() {
             className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4 transition hover:border-yellow-500/40"
           >
             <CheckCircle2 className="text-yellow-400" size={22} />
-
             <span className="text-zinc-200">{mission}</span>
           </div>
         ))}
       </div>
 
       <div className="mt-8">
-        <div className="mb-2 flex justify-between">
+        <div className="mb-2 flex justify-between text-sm">
           <span className="text-zinc-400">Completion</span>
-
-          <span className="text-yellow-400 font-semibold">
-            58%
-          </span>
+          <span className="font-semibold text-yellow-400">58%</span>
         </div>
-
-        <div className="h-3 rounded-full bg-zinc-800">
-          <div className="h-full w-[58%] rounded-full bg-yellow-400"></div>
-        </div>
+        <TitanProgress value={58} />
       </div>
-    </div>
+    </TitanCard>
   );
 }

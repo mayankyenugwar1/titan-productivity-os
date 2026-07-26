@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import Dashboard from "../pages/Dashboard";
-import Habits from "../pages/Habits";
+import MissionControlPage from "../pages/MissionControlPage";
 import Profile from "../pages/Profile";
 import Settings from "../pages/Settings";
 import Achievements from "../pages/Achievements";
@@ -29,7 +29,7 @@ export default function AppRoutes() {
         path="/habits"
         element={
           <ProtectedRoute>
-            <Habits />
+            <MissionControlPage />
           </ProtectedRoute>
         }
       />
