@@ -1,5 +1,6 @@
 import type { Habit } from "@/features/missions/types";
 import { calculateDynamicXP } from "@/features/missions/types";
+import { parseDurationMinutes } from "@/features/missions/constants";
 import { calculateLevel, getOperatorRank } from "@/services/xpEngineService";
 
 export interface CategoryTelemetry {
@@ -23,6 +24,9 @@ export interface KeyMetricsTelemetry {
   avgSessionMins: number;
   longestSessionMins: number;
   activeStreak: number;
+  totalPlannedTimeTodayMins: number;
+  totalPlannedTimeWeekMins: number;
+  avgMissionDurationMins: number;
 }
 
 export function calculateKeyMetrics(habits: Habit[], totalXP: number, streak: number): KeyMetricsTelemetry {
@@ -36,10 +40,24 @@ export function calculateKeyMetrics(habits: Habit[], totalXP: number, streak: nu
   const currentLevel = calculateLevel(totalXP);
   const rankInfo = getOperatorRank(currentLevel);
 
-  const getMins = (p: string) => (p === "High" ? 90 : p === "Medium" ? 45 : 20);
-  const totalFocusTimeMins = completedMissions.reduce((sum, h) => sum + getMins(h.priority), 0) || 320;
+  const getMins = (h: Habit) => {
+    if (h.duration) {
+      const parsed = parseDurationMinutes(h.duration);
+      if (parsed !== null) return parsed;
+    }
+    return h.estimatedMinutes || (h.priority === "High" ? 90 : h.priority === "Medium" ? 45 : 20);
+  };
+
+  const totalFocusTimeMins = completedMissions.reduce((sum, h) => sum + getMins(h), 0) || 320;
   const avgSessionMins = completedCount > 0 ? Math.round(totalFocusTimeMins / completedCount) : 45;
   const longestSessionMins = 90;
+
+  const totalPlannedTimeTodayMins = habits.reduce((sum, h) => sum + getMins(h), 0);
+  const totalPlannedTimeWeekMins = habits.reduce((sum, h) => {
+    const mins = getMins(h);
+    return sum + (h.frequency === "daily" ? mins * 7 : mins * (h.weeklyDays.length || 1));
+  }, 0);
+  const avgMissionDurationMins = totalCount > 0 ? Math.round(totalPlannedTimeTodayMins / totalCount) : 45;
 
   return {
     totalMissions: totalCount,
@@ -53,6 +71,9 @@ export function calculateKeyMetrics(habits: Habit[], totalXP: number, streak: nu
     avgSessionMins,
     longestSessionMins,
     activeStreak: streak || 1,
+    totalPlannedTimeTodayMins,
+    totalPlannedTimeWeekMins,
+    avgMissionDurationMins,
   };
 }
 
@@ -65,7 +86,17 @@ export function calculateCategoryBreakdown(habits: Habit[]): CategoryTelemetry[]
     const completed = catHabits.filter((h) => h.completed || h.history.length > 0).length;
     const rate = total > 0 ? Math.round((completed / total) * 100) : 75;
     const xpYield = catHabits.reduce((sum, h) => sum + calculateDynamicXP(h), 0);
-    const avgDurationMins = cat === "Physical" ? 60 : cat === "Operations" ? 90 : 30;
+
+    const getMins = (h: Habit) => {
+      if (h.duration) {
+        const parsed = parseDurationMinutes(h.duration);
+        if (parsed !== null) return parsed;
+      }
+      return h.estimatedMinutes || (cat === "Physical" ? 60 : cat === "Operations" ? 90 : 30);
+    };
+
+    const totalCatMins = catHabits.reduce((sum, h) => sum + getMins(h), 0);
+    const avgDurationMins = total > 0 ? Math.round(totalCatMins / total) : (cat === "Physical" ? 60 : cat === "Operations" ? 90 : 30);
 
     return {
       category: cat,

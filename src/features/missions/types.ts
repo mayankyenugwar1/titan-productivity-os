@@ -38,6 +38,15 @@ export type Weekday =
   | "saturday"
   | "sunday";
 
+export type MissionDuration =
+  | "15 mins"
+  | "30 mins"
+  | "45 mins"
+  | "60 mins"
+  | "90 mins"
+  | "120 mins"
+  | "infinite";
+
 export interface HabitCompletion {
   id: string;
   habitId: string;
@@ -60,8 +69,9 @@ export interface Habit {
   history: HabitCompletion[];
   state?: MissionState;
   archived?: boolean;
-  difficulty?: "Low" | "Medium" | "High" | "Ultra";
+  difficulty?: "Low" | "Medium" | "High" | "Extreme" | "Ultra";
   estimatedMinutes?: number;
+  duration?: MissionDuration;
   energyCost?: "Low" | "Medium" | "High";
   dueDate?: string;
   tags?: string[];
@@ -75,8 +85,9 @@ export interface HabitInput {
   xp: number;
   frequency: HabitFrequency;
   weeklyDays: Weekday[];
-  difficulty?: "Low" | "Medium" | "High" | "Ultra";
+  difficulty?: "Low" | "Medium" | "High" | "Extreme" | "Ultra";
   estimatedMinutes?: number;
+  duration?: MissionDuration;
   energyCost?: "Low" | "Medium" | "High";
   dueDate?: string;
   tags?: string[];

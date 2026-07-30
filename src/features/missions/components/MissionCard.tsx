@@ -4,6 +4,7 @@ import {
   Check,
   Clock,
   Copy,
+  Infinity as InfinityIcon,
   Pause,
   Pencil,
   Play,
@@ -20,7 +21,7 @@ import {
   type Habit,
   type MissionState,
 } from "../types";
-import { formatCategory } from "../constants";
+import { formatCategory, getDurationDisplayLabel, isInfiniteDuration } from "../constants";
 import { TitanBadge, TitanButton, TitanCard } from "@/components/ui";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import TacticalTooltip from "@/components/common/TacticalTooltip";
@@ -47,16 +48,22 @@ export default function MissionCard({
   const [isArchived, setIsArchived] = useState(Boolean(habit.archived));
   const [countdown, setCountdown] = useState("00:45:00");
 
-  // Live Countdown ticker
+  const isInfinite = isInfiniteDuration(habit.duration);
+
+  // Live Countdown ticker adapted for duration type
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      const targetMin = 59 - now.getMinutes();
-      const targetSec = 59 - now.getSeconds();
-      setCountdown(`00:${targetMin.toString().padStart(2, "0")}:${targetSec.toString().padStart(2, "0")}`);
+      if (isInfinite) {
+        setCountdown("∞ INFINITE SESSION");
+      } else {
+        const targetMin = 59 - now.getMinutes();
+        const targetSec = 59 - now.getSeconds();
+        setCountdown(`00:${targetMin.toString().padStart(2, "0")}:${targetSec.toString().padStart(2, "0")}`);
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isInfinite]);
 
   // Lifecycle state resolution
   const currentState: MissionState = isArchived
@@ -92,7 +99,7 @@ export default function MissionCard({
   const xpReward = calculateDynamicXP(habit);
   const starsCount = calculateDifficultyStars(habit);
   const coinReward = Math.round(xpReward / 10);
-  const estimatedDuration = habit.priority === "High" ? "60 mins" : habit.priority === "Medium" ? "30 mins" : "15 mins";
+  const estimatedDurationLabel = getDurationDisplayLabel(habit.duration, habit.priority);
 
   const getPriorityInfo = (p: string) => {
     if (p === "High") return { label: "CRITICAL", variant: "red" as const };
@@ -157,10 +164,22 @@ export default function MissionCard({
                 ))}
               </div>
 
-              {/* Duration */}
-              <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400 font-bold">
-                <Clock className="size-3.5 text-zinc-500" />
-                {estimatedDuration}
+              {/* Duration Badge */}
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${
+                isInfinite ? "text-[#e5c158]" : "text-zinc-400"
+              }`}>
+                {isInfinite ? (
+                  <span className="flex items-center gap-1">
+                    <Clock className="size-3.5 text-zinc-500" />
+                    <InfinityIcon className="size-3.5 text-[#e5c158]" />
+                    <span>Infinite</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Clock className="size-3.5 text-zinc-500" />
+                    <span>{estimatedDurationLabel}</span>
+                  </span>
+                )}
               </span>
             </div>
 
@@ -168,7 +187,11 @@ export default function MissionCard({
             {!habit.completed && !isArchived && (
               <div className="flex items-center gap-2 rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/10 px-3 py-1.5 text-xs text-[#e5c158] font-bold">
                 <span className="size-1.5 rounded-full bg-[#e5c158] animate-pulse" />
-                <span>REMAINING: {countdown}</span>
+                <span>
+                  {isInfinite
+                    ? "∞ INFINITE SESSION"
+                    : `REMAINING: ${countdown}`}
+                </span>
               </div>
             )}
           </div>
@@ -209,7 +232,9 @@ export default function MissionCard({
                   <span className="text-zinc-600">·</span>
                   <span className="text-zinc-300 font-bold">🪙 +{coinReward} COINS</span>
                   <span className="text-zinc-600">·</span>
-                  <span className="text-zinc-400">DUE: TODAY 18:00</span>
+                  <span className="text-zinc-400">
+                    {isInfinite ? "DUE: PERSISTENT" : "DUE: TODAY 18:00"}
+                  </span>
                 </div>
               </div>
             </div>

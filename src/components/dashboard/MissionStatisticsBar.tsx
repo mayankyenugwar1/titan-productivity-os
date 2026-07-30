@@ -6,6 +6,8 @@ import { calculateDynamicXP } from "@/features/missions/types";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import TitanProgress from "@/components/ui/TitanProgress";
 
+import { parseDurationMinutes } from "@/features/missions/constants";
+
 export default function MissionStatisticsBar() {
   const { habits } = useHabitStore();
 
@@ -20,10 +22,17 @@ export default function MissionStatisticsBar() {
 
     const totalXPAvailable = habits.reduce((sum, h) => sum + calculateDynamicXP(h), 0);
 
-    const getMins = (p: string) => (p === "High" ? 90 : p === "Medium" ? 45 : 20);
+    const getMins = (h: Habit) => {
+      if (h.duration) {
+        const parsed = parseDurationMinutes(h.duration);
+        if (parsed !== null) return parsed;
+        return 0;
+      }
+      return h.priority === "High" ? 90 : h.priority === "Medium" ? 45 : 20;
+    };
 
-    const estimatedFocusMins = habits.reduce((sum, h) => sum + getMins(h.priority), 0);
-    const completedFocusMins = completedList.reduce((sum, h) => sum + getMins(h.priority), 0);
+    const estimatedFocusMins = habits.reduce((sum, h) => sum + getMins(h), 0);
+    const completedFocusMins = completedList.reduce((sum, h) => sum + getMins(h), 0);
 
     return {
       totalToday,

@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Habit, HabitCategory, HabitCompletion, HabitFrequency, HabitInput, HabitPriority, Weekday } from "@/features/missions/types";
 import { sanitizeCategory } from "@/constants/categories";
+import { parseDurationMinutes, validateDuration } from "@/features/missions/constants";
 
 type HabitRow = {
   id: string;
@@ -13,6 +14,8 @@ type HabitRow = {
   xp: number;
   frequency: HabitFrequency;
   weekly_days: Weekday[];
+  duration?: string | null;
+  estimated_minutes?: number | null;
   created_at: string;
 };
 
@@ -85,6 +88,10 @@ function mapHabits(rows: HabitRow[], completions: CompletionRow[]): Habit[] {
   return rows.map((row) => {
     const history = completions.filter((completion) => completion.habit_id === row.id).map(asCompletion);
     const todayCompletion = history.find((completion) => completion.completedOn === today);
+    
+    const validDuration = validateDuration(row.duration ?? (row.estimated_minutes ? `${row.estimated_minutes} mins` : undefined));
+    const parsedMinutes = parseDurationMinutes(validDuration) ?? undefined;
+
     return {
       id: row.id,
       title: row.title,
@@ -94,6 +101,8 @@ function mapHabits(rows: HabitRow[], completions: CompletionRow[]): Habit[] {
       xp: row.xp,
       frequency: row.frequency,
       weeklyDays: row.weekly_days ?? [],
+      duration: validDuration,
+      estimatedMinutes: parsedMinutes,
       completed: Boolean(todayCompletion),
       createdAt: new Date(row.created_at),
       completedAt: todayCompletion?.completedAt,
@@ -157,6 +166,9 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         ? 100
         : 50;
 
+    const validDuration = validateDuration(input.duration);
+    const parsedMins = parseDurationMinutes(validDuration);
+
     const payload = {
       user_id: targetUserId,
       title: input.title.trim(),
@@ -166,6 +178,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       xp: validXP,
       frequency: validFrequency,
       weekly_days: validFrequency === "weekly" ? input.weeklyDays : [],
+      duration: validDuration,
+      estimated_minutes: parsedMins,
     };
 
     const { error } = await supabase.from("habits").insert(payload);
@@ -181,6 +195,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         xp: validXP,
         frequency: validFrequency,
         weeklyDays: payload.weekly_days,
+        duration: validDuration,
+        estimatedMinutes: parsedMins ?? undefined,
         completed: false,
         createdAt: new Date(),
         history: [],
@@ -212,6 +228,9 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     const validFrequency = input.frequency === "weekly" ? "weekly" : "daily";
     const validXP = typeof input.xp === "number" && input.xp > 0 ? input.xp : 100;
 
+    const validDuration = validateDuration(input.duration);
+    const parsedMins = parseDurationMinutes(validDuration);
+
     const payload = {
       title: input.title.trim(),
       description: input.description?.trim() || null,
@@ -220,6 +239,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       xp: validXP,
       frequency: validFrequency,
       weekly_days: validFrequency === "weekly" ? input.weeklyDays : [],
+      duration: validDuration,
+      estimated_minutes: parsedMins,
     };
 
     const { error } = await supabase
@@ -242,6 +263,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
                 xp: validXP,
                 frequency: validFrequency,
                 weeklyDays: payload.weekly_days,
+                duration: validDuration,
+                estimatedMinutes: parsedMins ?? undefined,
               }
             : h
         ),
@@ -258,47 +281,52 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     const habit = state.habits.find((item) => item.id === habitId);
     if (!habit) return false;
 
-    set({ error: null });
     const targetUserId = ensureValidUUID(rawUserId);
-    const isNowCompleted = !habit.completed;
     const today = toDateKey(new Date());
 
-    // Optimistic UI state update
-    const nextHabits = state.habits.map((item) =>
-      item.id === habitId ? { ...item, completed: isNowCompleted } : item
-    );
-    const nextCompletedToday = nextHabits.filter((h) => h.completed).length;
-    const xpDelta = isNowCompleted ? habit.xp : -habit.xp;
-    const nextTotalXP = Math.max(0, state.totalXP + xpDelta);
-    const nextFocusScore = nextHabits.length ? Math.round((nextCompletedToday / nextHabits.length) * 100) : 0;
-    const nextLevel = Math.floor(nextTotalXP / 500) + 1;
+    if (!habit.completed) {
+      const payload = {
+        user_id: targetUserId,
+        habit_id: habit.id,
+        completed_on: today,
+        completed_at: new Date().toISOString(),
+      };
 
-    set({
-      habits: nextHabits,
-      totalXP: nextTotalXP,
-      focusScore: nextFocusScore,
-      lastCompletedMission: isNowCompleted
-        ? {
-            title: habit.title,
-            xpEarned: habit.xp,
-            newTotalXP: nextTotalXP,
-            newLevel: nextLevel,
-            streak: state.streak,
-          }
-        : null,
-    });
+      const { error } = await supabase.from("habit_completions").insert(payload);
+      if (error) {
+        console.warn("Supabase insert completion fallback:", error.message);
+      }
+    } else {
+      const { error } = await supabase
+        .from("habit_completions")
+        .delete()
+        .eq("habit_id", habit.id)
+        .eq("user_id", targetUserId)
+        .eq("completed_on", today);
 
-    const { error } = isNowCompleted
-      ? await supabase.from("habit_completions").insert({ habit_id: habitId, user_id: targetUserId, completed_on: today })
-      : await supabase
-          .from("habit_completions")
-          .delete()
-          .eq("habit_id", habitId)
-          .eq("user_id", targetUserId)
-          .eq("completed_on", today);
+      if (error) {
+        console.warn("Supabase delete completion fallback:", error.message);
+      }
+    }
 
-    if (error) {
-      console.warn("Supabase completions toggle warning:", error.message);
+    await state.loadHabits(targetUserId);
+
+    const refreshedHabit = get().habits.find((item) => item.id === habitId);
+
+    if (!habit.completed && refreshedHabit?.completed) {
+      const xpEarned = habit.xp;
+      const nextTotalXP = state.totalXP + xpEarned;
+      const newLevel = Math.floor(nextTotalXP / 500) + 1;
+
+      set({
+        lastCompletedMission: {
+          title: habit.title,
+          xpEarned,
+          newTotalXP: nextTotalXP,
+          newLevel,
+          streak: state.streak,
+        },
+      });
     }
 
     return true;
@@ -307,13 +335,21 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   deleteHabit: async (rawUserId, habitId) => {
     set({ error: null });
     const targetUserId = ensureValidUUID(rawUserId);
-
     const { error } = await supabase.from("habits").delete().eq("id", habitId).eq("user_id", targetUserId);
+
     if (error) {
-      console.warn("Supabase delete fallback:", error.message);
-      set((state) => ({
-        habits: state.habits.filter((h) => h.id !== habitId),
-      }));
+      console.warn("Supabase habits delete fallback:", error.message);
+      set((state) => {
+        const nextHabits = state.habits.filter((h) => h.id !== habitId);
+        const completedToday = nextHabits.filter((h) => h.completed).length;
+        const totalXP = nextHabits.reduce((total, habit) => total + habit.history.length * habit.xp, 0);
+        const focusScore = nextHabits.length ? Math.round((completedToday / nextHabits.length) * 100) : 0;
+        return {
+          habits: nextHabits,
+          totalXP,
+          focusScore,
+        };
+      });
       return true;
     }
 
@@ -322,23 +358,33 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   },
 
   subscribeRealtime: (rawUserId) => {
-    const existingChannel = get().realtimeChannel;
-    if (existingChannel) return;
+    const state = get();
+    if (state.realtimeChannel) return;
 
     const targetUserId = ensureValidUUID(rawUserId);
 
     const channel = supabase
-      .channel(`titan-realtime-${targetUserId}`)
+      .channel(`habits-realtime-${targetUserId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${targetUserId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "habits",
+          filter: `user_id=eq.${targetUserId}`,
+        },
         () => {
           void get().loadHabits(targetUserId);
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "habit_completions", filter: `user_id=eq.${targetUserId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "habit_completions",
+          filter: `user_id=eq.${targetUserId}`,
+        },
         () => {
           void get().loadHabits(targetUserId);
         }
@@ -349,17 +395,13 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   },
 
   unsubscribeRealtime: () => {
-    const channel = get().realtimeChannel;
-    if (channel) {
-      void supabase.removeChannel(channel);
+    const { realtimeChannel } = get();
+    if (realtimeChannel) {
+      void supabase.removeChannel(realtimeChannel);
       set({ realtimeChannel: null });
     }
   },
 
   clearCompletionModal: () => set({ lastCompletedMission: null }),
-
-  clear: () => {
-    get().unsubscribeRealtime();
-    set({ habits: [], totalXP: 0, streak: 0, focusScore: 0, loading: false, error: null, lastCompletedMission: null });
-  },
+  clear: () => set({ habits: [], totalXP: 0, streak: 0, focusScore: 0, loading: false, error: null, lastCompletedMission: null }),
 }));

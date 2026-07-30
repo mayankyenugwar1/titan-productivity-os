@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Habit, HabitInput } from "../types";
 import { calculateDynamicXP } from "../types";
+import { getDurationSortOrder, isInfiniteDuration } from "../constants";
 import MissionCard from "./MissionCard";
 import MissionModal from "./MissionModal";
 import MissionHistory from "./MissionHistory";
@@ -56,7 +57,7 @@ export default function MissionList({
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "HISTORY">("ACTIVE");
   const [activeFilter, setActiveFilter] = useState("All");
-  const [sortBy, setSortBy] = useState<"Priority" | "XP" | "Recent">("Priority");
+  const [sortBy, setSortBy] = useState<"Priority" | "XP" | "Recent" | "Duration">("Priority");
   const [searchQuery, setSearchQuery] = useState("");
   const [focusingHabit, setFocusingHabit] = useState<Habit | null>(null);
 
@@ -72,6 +73,7 @@ export default function MissionList({
     { label: "Pending", value: "Upcoming" },
     { label: "Accomplished", value: "Completed" },
     { label: "Critical Clearance", value: "Critical" },
+    { label: "∞ Infinite", value: "Infinite" },
     { label: "Physical", value: "Workout" },
     { label: "Operations", value: "Coding" },
     { label: "Knowledge", value: "Study" },
@@ -111,6 +113,7 @@ export default function MissionList({
       if (activeFilter === "Upcoming") return !habit.completed && !habit.archived;
       if (activeFilter === "Completed") return habit.completed && !habit.archived;
       if (activeFilter === "Critical") return habit.priority === "High" && !habit.archived;
+      if (activeFilter === "Infinite") return isInfiniteDuration(habit.duration) && !habit.archived;
       if (activeFilter === "Workout") return (cat === "Physical" || cat === "Fitness") && !habit.archived;
       if (activeFilter === "Coding") return (cat === "Operations" || cat === "Coding") && !habit.archived;
       if (activeFilter === "Study") return (cat === "Knowledge" || cat === "Reading") && !habit.archived;
@@ -128,6 +131,9 @@ export default function MissionList({
       }
       if (sortBy === "XP") {
         return calculateDynamicXP(b) - calculateDynamicXP(a);
+      }
+      if (sortBy === "Duration") {
+        return getDurationSortOrder(a.duration, a.priority) - getDurationSortOrder(b.duration, b.priority);
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
@@ -264,11 +270,12 @@ export default function MissionList({
               <SlidersHorizontal className="size-3.5 text-zinc-500" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "Priority" | "XP" | "Recent")}
+                onChange={(e) => setSortBy(e.target.value as "Priority" | "XP" | "Recent" | "Duration")}
                 className="rounded-xl border border-zinc-800 bg-[#0c0c0f] px-3 py-1.5 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
               >
                 <option value="Priority">High Priority First</option>
                 <option value="XP">Highest XP First</option>
+                <option value="Duration">Shortest Duration First</option>
                 <option value="Recent">Recently Created</option>
               </select>
             </div>

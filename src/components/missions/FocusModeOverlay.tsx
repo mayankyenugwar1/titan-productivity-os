@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Infinity as InfinityIcon,
   Pause,
   Play,
   Shield,
@@ -18,7 +19,7 @@ import {
   calculateDynamicXP,
   type Habit,
 } from "@/features/missions/types";
-import { formatCategory } from "@/features/missions/constants";
+import { formatCategory, isInfiniteDuration, parseDurationMinutes } from "@/features/missions/constants";
 
 type FocusModeOverlayProps = {
   habit: Habit | null;
@@ -29,11 +30,14 @@ export default function FocusModeOverlay({ habit, onClose }: FocusModeOverlayPro
   const { user } = useAuth();
   const { toggleHabit } = useHabitStore();
 
+  const isInfinite = isInfiniteDuration(habit?.duration);
+
   // Duration in seconds
   const totalSeconds = useMemo(() => {
-    if (!habit) return 1800;
-    return (habit.priority === "High" ? 90 : habit.priority === "Medium" ? 45 : 20) * 60;
-  }, [habit]);
+    if (!habit || isInfinite) return 0;
+    const mins = parseDurationMinutes(habit.duration) ?? (habit.priority === "High" ? 90 : habit.priority === "Medium" ? 45 : 20);
+    return mins * 60;
+  }, [habit, isInfinite]);
 
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -50,15 +54,17 @@ export default function FocusModeOverlay({ habit, onClose }: FocusModeOverlayPro
 
   // Timer Tick & Cleanup
   useEffect(() => {
-    if (!isRunning || secondsLeft <= 0 || showCompletionOverlay) return;
+    if (!isRunning || showCompletionOverlay) return;
 
     const interval = setInterval(() => {
-      setSecondsLeft((prev) => Math.max(0, prev - 1));
+      if (!isInfinite && secondsLeft > 0) {
+        setSecondsLeft((prev) => Math.max(0, prev - 1));
+      }
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, secondsLeft, showCompletionOverlay]);
+  }, [isRunning, isInfinite, secondsLeft, showCompletionOverlay]);
 
   if (!habit) return null;
 
@@ -74,11 +80,11 @@ export default function FocusModeOverlay({ habit, onClose }: FocusModeOverlayPro
     return `${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const formattedRemaining = formatTime(secondsLeft);
+  const formattedRemaining = isInfinite ? "∞ Infinite Session" : formatTime(secondsLeft);
   const formattedElapsed = formatTime(elapsedSeconds);
 
   // SVG Progress Ring Calculation
-  const progressPercent = Math.min(100, Math.max(0, ((totalSeconds - secondsLeft) / totalSeconds) * 100));
+  const progressPercent = isInfinite ? 100 : totalSeconds > 0 ? Math.min(100, Math.max(0, ((totalSeconds - secondsLeft) / totalSeconds) * 100)) : 100;
   const strokeDashoffset = 440 - (440 * progressPercent) / 100;
 
   const xpReward = calculateDynamicXP(habit);
@@ -204,13 +210,22 @@ export default function FocusModeOverlay({ habit, onClose }: FocusModeOverlayPro
               />
             </svg>
 
-            {/* Large Countdown Timer */}
+            {/* Large Countdown / Session Readout */}
             <div className="absolute flex flex-col items-center">
-              <span className="text-5xl font-black tracking-wider text-zinc-100 sm:text-6xl">
-                {formattedRemaining}
-              </span>
+              {isInfinite ? (
+                <div className="flex flex-col items-center space-y-1">
+                  <InfinityIcon className="size-12 text-[#e5c158] animate-pulse" />
+                  <span className="text-xl font-bold tracking-wider text-zinc-100">
+                    No Time Limit
+                  </span>
+                </div>
+              ) : (
+                <span className="text-5xl font-black tracking-wider text-zinc-100 sm:text-6xl">
+                  {formattedRemaining}
+                </span>
+              )}
               <span className="mt-2 text-xs font-bold uppercase tracking-[0.25em] text-[#e5c158]">
-                REMAINING DURATION
+                {isInfinite ? "INFINITE SESSION" : "REMAINING DURATION"}
               </span>
             </div>
           </div>
@@ -224,7 +239,9 @@ export default function FocusModeOverlay({ habit, onClose }: FocusModeOverlayPro
 
             <div className="rounded-xl border border-zinc-800/80 bg-[#0d0d10] p-3 text-center">
               <span className="block text-[10px] text-zinc-500 uppercase tracking-wider">Remaining Time</span>
-              <span className="mt-1 font-bold text-[#e5c158]">{formattedRemaining}</span>
+              <span className="mt-1 font-bold text-[#e5c158]">
+                {isInfinite ? "No Limit" : formattedRemaining}
+              </span>
             </div>
 
             <div className="rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/10 p-3 text-center">

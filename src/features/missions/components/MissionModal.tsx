@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Shield, X, Zap } from "lucide-react";
+import { Clock, Shield, X, Zap } from "lucide-react";
 
-import { HABIT_CATEGORIES, WEEKDAYS } from "../constants";
+import {
+  getDurationDefaults,
+  getDurationDisplayLabel,
+  HABIT_CATEGORIES,
+  MISSION_DURATIONS,
+  validateDuration,
+  WEEKDAYS,
+} from "../constants";
 import type { Habit, HabitCategory, HabitFrequency, HabitInput, HabitPriority, Weekday } from "../types";
 import { TitanButton, TitanInput, TitanSelect, TitanTextarea } from "@/components/ui";
 
@@ -21,6 +28,7 @@ const defaults: HabitInput = {
   xp: 100,
   frequency: "daily",
   weeklyDays: [],
+  duration: "45 mins",
 };
 
 export default function MissionModal({ open, habit, onClose, onSubmit }: MissionModalProps) {
@@ -29,31 +37,59 @@ export default function MissionModal({ open, habit, onClose, onSubmit }: Mission
 
   // Extended console states
   const [difficulty, setDifficulty] = useState("Medium");
-  const [duration, setDuration] = useState("45 mins");
   const [energyCost, setEnergyCost] = useState("Medium");
   const [dueDate, setDueDate] = useState("Today");
 
   useEffect(() => {
     if (!open) return;
-    setForm(
-      habit
-        ? {
-            title: habit.title,
-            description: habit.description ?? "",
-            category: habit.category,
-            priority: habit.priority,
-            xp: habit.xp,
-            frequency: habit.frequency,
-            weeklyDays: habit.weeklyDays,
-          }
-        : defaults
-    );
+    if (habit) {
+      const initialDuration = validateDuration(
+        habit.duration || (habit.estimatedMinutes ? `${habit.estimatedMinutes} mins` : "45 mins")
+      );
+      const scaling = getDurationDefaults(initialDuration);
+
+      setForm({
+        title: habit.title,
+        description: habit.description ?? "",
+        category: habit.category,
+        priority: habit.priority,
+        xp: habit.xp || scaling.xp,
+        frequency: habit.frequency,
+        weeklyDays: habit.weeklyDays,
+        duration: initialDuration,
+      });
+      setDifficulty(habit.difficulty || scaling.difficulty);
+      setEnergyCost(habit.energyCost || scaling.energyCost);
+    } else {
+      const defaultDuration = "45 mins";
+      const scaling = getDurationDefaults(defaultDuration);
+      setForm({
+        ...defaults,
+        duration: defaultDuration,
+        xp: scaling.xp,
+      });
+      setDifficulty(scaling.difficulty);
+      setEnergyCost(scaling.energyCost);
+    }
   }, [habit, open]);
 
   if (!open) return null;
 
   const update = <K extends keyof HabitInput>(key: K, value: HabitInput[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
+
+  const handleDurationChange = (selectedDuration: string) => {
+    const valid = validateDuration(selectedDuration);
+    const scaling = getDurationDefaults(valid);
+
+    setForm((current) => ({
+      ...current,
+      duration: valid,
+      xp: scaling.xp,
+    }));
+    setDifficulty(scaling.difficulty);
+    setEnergyCost(scaling.energyCost);
+  };
 
   const toggleDay = (day: Weekday) =>
     update(
@@ -71,6 +107,7 @@ export default function MissionModal({ open, habit, onClose, onSubmit }: Mission
   };
 
   const coinReward = Math.round(form.xp / 10);
+  const currentDurationDisplayLabel = getDurationDisplayLabel(form.duration, form.priority);
 
   return (
     <AnimatePresence>
@@ -158,29 +195,29 @@ export default function MissionModal({ open, habit, onClose, onSubmit }: Mission
               </TitanSelect>
             </div>
 
-            {/* 4. Difficulty & Duration */}
+            {/* 4. Estimated Duration (Fully Controlled Dropdown) */}
             <div className="grid grid-cols-2 gap-4">
+              <TitanSelect
+                label="Estimated Duration"
+                value={form.duration || "45 mins"}
+                onChange={(e) => handleDurationChange(e.target.value)}
+              >
+                {MISSION_DURATIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </TitanSelect>
+
               <TitanSelect
                 label="Operation Difficulty"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
               >
-                <option value="High">Extreme</option>
+                <option value="Extreme">Extreme</option>
+                <option value="High">High</option>
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
-              </TitanSelect>
-
-              <TitanSelect
-                label="Estimated Duration"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-              >
-                <option value="15 mins">15 minutes</option>
-                <option value="30 mins">30 minutes</option>
-                <option value="45 mins">45 minutes</option>
-                <option value="60 mins">60 minutes</option>
-                <option value="90 mins">90 minutes</option>
-                <option value="120 mins">120 minutes</option>
               </TitanSelect>
             </div>
 
@@ -201,7 +238,7 @@ export default function MissionModal({ open, habit, onClose, onSubmit }: Mission
                 value={form.xp}
                 onChange={(e) => update("xp", Number(e.target.value))}
               >
-                {[25, 50, 75, 100, 150, 200].map((v) => (
+                {[25, 50, 75, 100, 125, 150, 175, 200, 250].map((v) => (
                   <option key={v} value={v}>
                     +{v} XP
                   </option>
@@ -209,13 +246,41 @@ export default function MissionModal({ open, habit, onClose, onSubmit }: Mission
               </TitanSelect>
             </div>
 
-            {/* Calculated Coin Reward Display */}
-            <div className="flex items-center justify-between rounded-xl border border-zinc-800/80 bg-[#121217] p-3 text-zinc-300">
-              <div className="flex items-center gap-2">
-                <Zap className="size-4 text-[#e5c158]" />
-                <span>COIN YIELD REWARD</span>
+            {/* Live Mission Time Summary Box */}
+            <div className="rounded-2xl border border-zinc-800/90 bg-[#0d0d12] p-4 text-xs font-mono space-y-2.5 shadow-lg shadow-black/40">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2 text-[#e5c158] font-bold">
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-[#e5c158]" />
+                  <span className="tracking-wider uppercase">MISSION ESTIMATE</span>
+                </div>
+                <span className="text-[10px] text-zinc-400">AUTO-SCALED</span>
               </div>
-              <span className="font-bold text-[#e5c158]">🪙 +{coinReward} COINS</span>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-300">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Duration</span>
+                  <span className="font-bold text-white">{currentDurationDisplayLabel}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Difficulty</span>
+                  <span className="font-bold text-white">{difficulty}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Energy Cost</span>
+                  <span className="font-bold text-white">{energyCost}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">XP Reward</span>
+                  <span className="font-bold text-[#e5c158]">+{form.xp} XP</span>
+                </div>
+                <div className="col-span-2 flex justify-between border-t border-zinc-800/60 pt-2 text-[#e5c158]">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <Zap className="size-3.5" />
+                    Coin Reward Yield
+                  </span>
+                  <span className="font-extrabold">🪙 +{coinReward} COINS</span>
+                </div>
+              </div>
             </div>
 
             {/* 6. Due Date & Repeat Schedule */}

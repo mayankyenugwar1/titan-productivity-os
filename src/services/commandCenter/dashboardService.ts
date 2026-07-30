@@ -1,5 +1,6 @@
 import type { Habit } from "@/features/missions/types";
 import type { Project, Goal } from "@/services/projects/projectService";
+import { parseDurationMinutes } from "@/features/missions/constants";
 
 export interface MorningBriefingPayload {
   todayMissionsCount: number;
@@ -80,8 +81,17 @@ export function calculateProductivityScore(
 }
 
 export function calculateFocusTelemetry(habits: Habit[]): FocusTelemetry {
-  const totalMins = habits.reduce((acc, h) => acc + (h.estimatedMinutes || 45), 0);
-  const completedMins = habits.filter((h) => h.completed).reduce((acc, h) => acc + (h.estimatedMinutes || 45), 0);
+  const getMins = (h: Habit) => {
+    if (h.duration) {
+      const parsed = parseDurationMinutes(h.duration);
+      if (parsed !== null) return parsed;
+      return 0;
+    }
+    return h.estimatedMinutes || 45;
+  };
+
+  const totalMins = habits.reduce((acc, h) => acc + getMins(h), 0);
+  const completedMins = habits.filter((h) => h.completed).reduce((acc, h) => acc + getMins(h), 0);
 
   return {
     deepWorkHours: Number((completedMins / 60).toFixed(1)),

@@ -21,6 +21,7 @@ import { fadeUp } from "@/animations/motion";
 import { useAuth } from "@/context/AuthContext";
 import { useHabitStore } from "@/store/missionStore";
 import type { Habit } from "@/features/missions/types";
+import { getDurationDisplayLabel } from "@/features/missions/constants";
 
 type TimePeriod = "Morning" | "Afternoon" | "Evening" | "Night";
 
@@ -57,9 +58,7 @@ function getPeriodIcon(period: TimePeriod) {
 }
 
 function getDuration(habit: Habit): string {
-  if (habit.priority === "High") return "90 min";
-  if (habit.priority === "Medium") return "45 min";
-  return "20 min";
+  return getDurationDisplayLabel(habit.duration, habit.priority);
 }
 
 function getIcon(habit: Habit) {
