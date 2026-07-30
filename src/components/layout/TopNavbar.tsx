@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Bell, Search, ShieldCheck, Trophy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, Download, Search, ShieldCheck, Trophy } from "lucide-react";
 import { useHabitStore } from "@/store/missionStore";
 import { getProgressionDetails } from "@/services/xpEngineService";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -14,6 +14,39 @@ export function TopNavbar({ title = "Mission Control" }: TopNavbarProps) {
   const { unreadCount } = useNotifications();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    }
+  };
 
   return (
     <>
@@ -26,6 +59,17 @@ export function TopNavbar({ title = "Mission Control" }: TopNavbarProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* PWA Custom Install Button */}
+          {canInstall && (
+            <button
+              onClick={() => void handleInstallApp()}
+              className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/10 px-3.5 py-2 text-xs font-bold text-[#e5c158] hover:bg-[#d4af37]/20 transition animate-pulse"
+            >
+              <Download className="size-3.5" />
+              <span>INSTALL TITAN OS</span>
+            </button>
+          )}
+
           {/* Command Palette Trigger Button (Ctrl + K) */}
           <button
             onClick={() => {

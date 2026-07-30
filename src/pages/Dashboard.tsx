@@ -38,10 +38,10 @@ export default function Dashboard() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      void loadHabits(user.id);
-      subscribeRealtime(user.id);
-    }
+    const userId = user?.id || "local_user";
+    void loadHabits(userId);
+    subscribeRealtime(userId);
+
     const hasSeenOnboarding = localStorage.getItem("titan_onboarding_seen");
     if (!hasSeenOnboarding) {
       setOnboardingOpen(true);
@@ -56,20 +56,19 @@ export default function Dashboard() {
     setOnboardingOpen(false);
   };
 
+  const userId = user?.id || "local_user";
+
   const handleSubmit = async (input: HabitInput) => {
-    if (!user) return false;
     if (editingHabit) {
-      return updateHabit(user.id, editingHabit.id, input);
+      return updateHabit(userId, editingHabit.id, input);
     }
-    return addHabit(user.id, input);
+    return addHabit(userId, input);
   };
 
   const handleCloseModal = () => {
     setOpenModal(false);
     setEditingHabit(null);
   };
-
-  const userId = user?.id || "local_user";
 
   return (
     <ErrorBoundary>

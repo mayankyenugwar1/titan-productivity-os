@@ -17,9 +17,11 @@ export default function MissionControlPage() {
   const [open, setOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
+  const userId = user?.id || "local_user";
+
   useEffect(() => {
-    if (user) void loadHabits(user.id);
-  }, [loadHabits, user]);
+    void loadHabits(userId);
+  }, [loadHabits, userId]);
 
   const todaysHabits = useMemo(() => habits.filter((habit: Habit) => habit.frequency === "daily" || habit.weeklyDays.includes(weekday)), [habits]);
   const completed = todaysHabits.filter((habit: Habit) => habit.completed).length;
@@ -33,12 +35,12 @@ export default function MissionControlPage() {
     [habits]
   );
 
-  const submit = async (input: HabitInput) =>
-    user
-      ? editingHabit
-        ? updateHabit(user.id, editingHabit.id, input)
-        : addHabit(user.id, input)
-      : false;
+  const submit = async (input: HabitInput) => {
+    if (editingHabit) {
+      return updateHabit(userId, editingHabit.id, input);
+    }
+    return addHabit(userId, input);
+  };
 
   const closeModal = () => {
     setOpen(false);
@@ -113,9 +115,9 @@ export default function MissionControlPage() {
               <MissionCard
                 key={habit.id}
                 habit={habit}
-                onToggle={(id: string) => (user ? toggleHabit(user.id, id) : Promise.resolve(false))}
+                onToggle={(id: string) => toggleHabit(userId, id)}
                 onEdit={editHabit}
-                onDelete={(id: string) => (user ? deleteHabit(user.id, id) : Promise.resolve(false))}
+                onDelete={(id: string) => deleteHabit(userId, id)}
               />
             ))}
           </div>
