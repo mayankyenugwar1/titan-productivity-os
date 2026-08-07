@@ -31,7 +31,7 @@ export default function KPIGrid() {
 
   // 4. Weekly Consistency % (calculated from completions history over 7 days)
   const weeklyConsistency = useMemo(() => {
-    const totalCompletions = habits.reduce((acc, h) => acc + h.history.length, 0);
+    const totalCompletions = habits.reduce((acc, h) => acc + (Array.isArray(h.history) ? h.history.length : 0), 0);
     if (habits.length === 0) return 92;
     return Math.min(100, Math.round((totalCompletions / (habits.length * 7)) * 100) || 88);
   }, [habits]);

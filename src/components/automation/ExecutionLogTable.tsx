@@ -1,6 +1,7 @@
 import { CheckCircle2, History, XCircle } from "lucide-react";
 import type { ExecutionRecord } from "@/store/automationStore";
 import { TitanBadge } from "@/components/ui";
+import { safeTime } from "@/utils/safeDate";
 
 interface ExecutionLogTableProps {
   history: ExecutionRecord[];
@@ -43,7 +44,7 @@ export default function ExecutionLogTable({ history }: ExecutionLogTableProps) {
 
             <div className="text-right shrink-0">
               <span className="text-[10px] text-[#e5c158] font-bold">{record.durationMs} ms</span>
-              <p className="text-[10px] text-zinc-500 font-bold">{new Date(record.timestamp).toLocaleTimeString()}</p>
+              <p className="text-[10px] text-zinc-500 font-bold">{safeTime(record.timestamp)}</p>
             </div>
           </div>
         ))}

@@ -1,8 +1,10 @@
 import type { Habit } from "@/features/missions/types";
 import { calculateDynamicXP } from "@/features/missions/types";
+import { safeDateKey, safeDateString } from "@/utils/safeDate";
 
 export function exportAnalyticsCSV(habits: Habit[], totalXP: number, streak: number): void {
   const headers = ["Mission ID", "Title", "Category", "Priority", "Status", "XP Yield", "Coin Yield", "Created Date"];
+  const todayKey = safeDateKey(new Date());
 
   const rows = habits.map((h) => {
     const xp = calculateDynamicXP(h);
@@ -16,7 +18,7 @@ export function exportAnalyticsCSV(habits: Habit[], totalXP: number, streak: num
       `"${status}"`,
       xp,
       coins,
-      `"${new Date().toISOString().split("T")[0]}"`,
+      `"${todayKey}"`,
     ].join(",");
   });
 
@@ -31,18 +33,19 @@ export function exportAnalyticsCSV(habits: Habit[], totalXP: number, streak: num
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `TITAN_Telemetry_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute("download", `TITAN_Telemetry_Report_${todayKey}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
 export function exportAnalyticsPDF(habits: Habit[], totalXP: number, streak: number): void {
+  const todayKey = safeDateKey(new Date());
   const reportText = `
 ===================================================================
                   TITAN OPERATOR TELEMETRY REPORT
 ===================================================================
-Generated: ${new Date().toLocaleString()}
+Generated: ${safeDateString(new Date(), { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
 Classification: CLASSIFIED // LEVEL CLEARANCE REPORT
 
 1. SYSTEM SUMMARY
@@ -71,7 +74,7 @@ ${habits
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `TITAN_Operational_Report_${new Date().toISOString().slice(0, 10)}.txt`);
+  link.setAttribute("download", `TITAN_Operational_Report_${todayKey}.txt`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

@@ -1,5 +1,6 @@
 import type { Habit } from "@/features/missions/types";
 import { calculateDynamicXP } from "@/features/missions/types";
+import { safeTime } from "@/utils/safeDate";
 
 export interface ActivityFeedItem {
   id: string;
@@ -14,7 +15,7 @@ export interface ActivityFeedItem {
 export function generateActivityFeed(habits: Habit[]): ActivityFeedItem[] {
   const items: ActivityFeedItem[] = [];
 
-  habits.forEach((habit) => {
+  (habits || []).forEach((habit) => {
     const xp = calculateDynamicXP(habit);
 
     if (habit.completed) {
@@ -23,7 +24,7 @@ export function generateActivityFeed(habits: Habit[]): ActivityFeedItem[] {
         title: `Operation Complete: ${habit.title}`,
         description: `Accomplished operation in ${habit.category} sector yielding +${xp} XP.`,
         type: "COMPLETED",
-        timestamp: habit.completedAt ? new Date(habit.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Today",
+        timestamp: habit.completedAt ? safeTime(habit.completedAt, { hour: "2-digit", minute: "2-digit" }, "Today") : "Today",
         category: habit.category,
         xpValue: xp,
       });

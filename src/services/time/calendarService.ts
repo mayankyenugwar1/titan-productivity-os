@@ -1,4 +1,5 @@
 import type { Habit } from "@/features/missions/types";
+import { safeDateKey } from "@/utils/safeDate";
 
 export interface CalendarEvent {
   id: string;
@@ -18,7 +19,7 @@ export interface CalendarEvent {
 }
 
 export function habitToCalendarEvent(habit: Habit, index = 0): CalendarEvent {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = safeDateKey(new Date());
   const startHour = 8 + (index * 2) % 10;
   const startTime = `${startHour.toString().padStart(2, "0")}:00`;
   const durationMins = habit.priority === "High" ? 90 : habit.priority === "Medium" ? 60 : 30;
@@ -46,5 +47,5 @@ export function habitToCalendarEvent(habit: Habit, index = 0): CalendarEvent {
 }
 
 export function getCalendarEventsFromHabits(habits: Habit[]): CalendarEvent[] {
-  return habits.map((h, idx) => habitToCalendarEvent(h, idx));
+  return (habits || []).map((h, idx) => habitToCalendarEvent(h, idx));
 }

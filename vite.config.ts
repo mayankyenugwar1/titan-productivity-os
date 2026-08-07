@@ -24,6 +24,7 @@ export default defineConfig({
         'robots.txt'
       ],
       manifest: {
+        id: '/',
         name: 'TITAN OS',
         short_name: 'TITAN',
         description: 'AI Powered Productivity Operating System',
@@ -33,27 +34,31 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
+        categories: ['productivity', 'utilities'],
         icons: [
           {
             src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any',
           },
           {
             src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
+            purpose: 'any',
           },
           {
             src: '/maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'maskable',
           },
           {
             src: '/apple-touch-icon.png',
             sizes: '180x180',
             type: 'image/png',
+            purpose: 'any',
           },
         ],
         shortcuts: [
@@ -76,6 +81,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,

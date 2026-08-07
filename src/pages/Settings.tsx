@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { safeISOString } from "@/utils/safeDate";
 import { SectionHeader, TitanBadge, TitanButton } from "@/components/ui";
 import {
   Bell,
@@ -16,7 +17,7 @@ export default function Settings() {
   const handleExportData = () => {
     const exportPayload = {
       operator: "Operator (Local)",
-      exportedAt: new Date().toISOString(),
+      exportedAt: safeISOString(new Date()),
       appVersion: "1.0.0-RC",
       status: "PRODUCTION_READY",
     };

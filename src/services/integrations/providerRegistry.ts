@@ -1,3 +1,5 @@
+import { safeISOString } from "@/utils/safeDate";
+
 export type ProviderCategory =
   | "Calendar & Tasks"
   | "Developer & Code"
@@ -27,7 +29,7 @@ export const SUPPORTED_PROVIDERS: IntegrationProviderInfo[] = [
     description: "Two-way synchronization for events, time blocks, and scheduled directives.",
     iconName: "Calendar",
     status: "CONNECTED",
-    lastSyncedAt: new Date(Date.now() - 1800000).toISOString(),
+    lastSyncedAt: safeISOString(new Date(Date.now() - 1800000)),
     capabilities: ["Two-Way Event Sync", "Conflict Detection", "Time Blocking"],
     requiresAuth: true,
   },
@@ -38,7 +40,7 @@ export const SUPPORTED_PROVIDERS: IntegrationProviderInfo[] = [
     description: "Link repositories, import issues as tactical missions, and track commit activity.",
     iconName: "GitBranch",
     status: "CONNECTED",
-    lastSyncedAt: new Date(Date.now() - 3600000).toISOString(),
+    lastSyncedAt: safeISOString(new Date(Date.now() - 3600000)),
     capabilities: ["Issue Import", "PR Tracking", "Commit Telemetry"],
     requiresAuth: true,
   },
@@ -49,7 +51,7 @@ export const SUPPORTED_PROVIDERS: IntegrationProviderInfo[] = [
     description: "Bidirectional document sync and Knowledge OS page importing.",
     iconName: "BookOpen",
     status: "CONNECTED",
-    lastSyncedAt: new Date(Date.now() - 7200000).toISOString(),
+    lastSyncedAt: safeISOString(new Date(Date.now() - 7200000)),
     capabilities: ["Page Import", "Vault Export", "Database Mapping"],
     requiresAuth: true,
   },

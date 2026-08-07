@@ -1,5 +1,6 @@
 import type { Habit } from "@/features/missions/types";
 import type { Project } from "@/store/projectStore";
+import { safeDateString } from "@/utils/safeDate";
 
 export interface DailyBriefingData {
   date: string;
@@ -30,7 +31,7 @@ export function generateDailyBriefing(
     focusRecommendation = "All today's missions accomplished! Allocate focus to strategic Project Initiatives or Knowledge OS research.";
   }
 
-  const dateStr = new Date().toLocaleDateString("en-US", {
+  const dateStr = safeDateString(new Date(), {
     weekday: "long",
     month: "short",
     day: "numeric",

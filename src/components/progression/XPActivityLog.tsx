@@ -4,17 +4,19 @@ import { useHabitStore } from "@/store/missionStore";
 import type { Habit } from "@/features/missions/types";
 import { calculateMissionXP } from "@/services/xpEngineService";
 import { EmptyState, SectionHeader, TitanBadge } from "@/components/ui";
+import { safeDate, safeDateString } from "@/utils/safeDate";
 
 export default function XPActivityLog() {
   const { habits } = useHabitStore();
 
   const xpActivities = useMemo(() => {
-    return habits
-      .filter((h: Habit) => h.completed || h.history.length > 0)
+    return (habits || [])
+      .filter((h: Habit) => h.completed || (h.history && h.history.length > 0))
       .map((habit: Habit) => {
         const xp = calculateMissionXP(habit);
         const coins = Math.round(xp / 10);
-        const completedDate = habit.completedAt ? new Date(habit.completedAt) : new Date();
+        const d = safeDate(habit.completedAt) || safeDate(habit.createdAt);
+        const completedDate = d || new Date(0);
 
         return {
           id: habit.id,
@@ -23,10 +25,11 @@ export default function XPActivityLog() {
           coinEarned: coins,
           category: habit.category,
           date: completedDate,
+          timestamp: completedDate.getTime(),
           reason: "Tactical Operation Accomplished",
         };
       })
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
+      .sort((a, b) => b.timestamp - a.timestamp);
   }, [habits]);
 
   return (
@@ -46,13 +49,13 @@ export default function XPActivityLog() {
       ) : (
         <div className="space-y-3">
           {xpActivities.map((act) => {
-            const formattedDate = new Intl.DateTimeFormat("en-GB", {
+            const formattedDate = safeDateString(act.date, {
               day: "2-digit",
               month: "short",
               year: "numeric",
               hour: "2-digit",
               minute: "2-digit",
-            }).format(act.date);
+            });
 
             return (
               <div

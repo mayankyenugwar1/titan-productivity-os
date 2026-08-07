@@ -1,4 +1,5 @@
 import { LayoutTemplate, Plus } from "lucide-react";
+import { safeDateString } from "@/utils/safeDate";
 import { TitanBadge, TitanButton } from "@/components/ui";
 
 export interface KnowledgeTemplate {
@@ -15,7 +16,7 @@ export const KNOWLEDGE_TEMPLATES: KnowledgeTemplate[] = [
     name: "Executive Meeting Notes",
     category: "Operations",
     description: "Template for capturing agenda, action items, owner assignments, and key decisions.",
-    initialContent: `# Executive Meeting Notes\n\n**Date:** ${new Date().toLocaleDateString()}\n**Attendees:** Operator, Team\n\n## Agenda\n1. Strategic Objectives\n2. Blockers & Risks\n\n## Action Items\n- [ ] Task 1\n- [ ] Task 2`,
+    initialContent: `# Executive Meeting Notes\n\n**Date:** ${safeDateString(new Date())}\n**Attendees:** Operator, Team\n\n## Agenda\n1. Strategic Objectives\n2. Blockers & Risks\n\n## Action Items\n- [ ] Task 1\n- [ ] Task 2`,
   },
   {
     id: "kt-2",

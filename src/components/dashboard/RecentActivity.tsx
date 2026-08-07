@@ -8,6 +8,7 @@ import {
 import { ICON_SIZES, SectionHeader, TitanBadge, TitanCard } from "@/components/ui";
 import { useHabitStore } from "@/store/missionStore";
 import type { Habit } from "@/features/missions/types";
+import { safeDate, safeTime } from "@/utils/safeDate";
 
 const defaultActivities = [
   {
@@ -42,27 +43,24 @@ const defaultActivities = [
   },
 ];
 
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
 export default function RecentActivity() {
   const { habits } = useHabitStore();
 
-  const realActivities = habits
+  const realActivities = (habits || [])
     .flatMap((habit: Habit) =>
-      habit.history.map((completion) => ({
-        id: completion.id,
-        title: habit.title,
-        time: timeFormatter.format(completion.completedAt),
-        xp: `+${habit.xp} XP`,
-        icon: CheckCircle2,
-        date: completion.completedAt,
-      }))
+      (habit.history || []).map((completion) => {
+        const d = safeDate(completion.completedAt);
+        return {
+          id: completion.id,
+          title: habit.title,
+          time: safeTime(completion.completedAt, { hour: "numeric", minute: "2-digit", hour12: true }),
+          xp: `+${habit.xp} XP`,
+          icon: CheckCircle2,
+          timestamp: d ? d.getTime() : 0,
+        };
+      })
     )
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 5);
 
   const displayActivities = realActivities.length > 0 ? realActivities : defaultActivities;

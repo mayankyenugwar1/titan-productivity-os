@@ -1,4 +1,5 @@
 import type { CalendarEvent } from "./calendarService";
+import { safeDateKey } from "@/utils/safeDate";
 
 export interface FreeSlotSuggestion {
   startDate: string;
@@ -8,10 +9,10 @@ export interface FreeSlotSuggestion {
 }
 
 export function suggestFreeSlot(events: CalendarEvent[], durationMins = 60): FreeSlotSuggestion {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = safeDateKey(new Date());
 
   // Default to 14:00 if free
-  const busyEndMins = events.reduce((max, e) => {
+  const busyEndMins = (events || []).reduce((max, e) => {
     const [h, m] = e.endTime.split(":").map(Number);
     const end = (h || 0) * 60 + (m || 0);
     return end > max ? end : max;
@@ -35,13 +36,13 @@ export function suggestFreeSlot(events: CalendarEvent[], durationMins = 60): Fre
 
 export function findEmptyTimeSlots(events: CalendarEvent[]): string[] {
   const hours = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
-  const busyStarts = new Set(events.map((e) => e.startTime));
+  const busyStarts = new Set((events || []).map((e) => e.startTime));
   return hours.filter((h) => !busyStarts.has(h));
 }
 
 export function optimizeOrder(events: CalendarEvent[]): CalendarEvent[] {
   // Sort high priority first, then earliest start time
-  return [...events].sort((a, b) => {
+  return [...(events || [])].sort((a, b) => {
     if (a.priority === "High" && b.priority !== "High") return -1;
     if (a.priority !== "High" && b.priority === "High") return 1;
     return a.startTime.localeCompare(b.startTime);

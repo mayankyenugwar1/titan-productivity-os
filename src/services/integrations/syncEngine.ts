@@ -1,4 +1,5 @@
 import { SUPPORTED_PROVIDERS, type IntegrationProviderInfo } from "./providerRegistry";
+import { safeTime } from "@/utils/safeDate";
 
 export interface SyncLogEntry {
   id: string;
@@ -19,17 +20,17 @@ export interface SyncHealthTelemetry {
 }
 
 export function calculateSyncHealth(providers: IntegrationProviderInfo[]): SyncHealthTelemetry {
-  const connectedCount = providers.filter((p) => p.status === "CONNECTED").length;
+  const connectedCount = (providers || []).filter((p) => p.status === "CONNECTED").length;
 
   let overallHealth: "HEALTHY" | "DEGRADED" | "OFFLINE" = "HEALTHY";
   if (connectedCount === 0) overallHealth = "OFFLINE";
-  else if (connectedCount < providers.length / 2) overallHealth = "DEGRADED";
+  else if (connectedCount < (providers || []).length / 2) overallHealth = "DEGRADED";
 
   return {
     overallHealth,
     connectedCount,
-    totalProviders: providers.length,
-    lastSyncedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    totalProviders: (providers || []).length,
+    lastSyncedAt: safeTime(new Date()),
     activeQueueCount: 0,
   };
 }
@@ -45,6 +46,6 @@ export function performProviderSync(providerId: string): SyncLogEntry {
     status: "SUCCESS",
     message: `Synchronized workspace state with ${name}. 14 records processed.`,
     itemsSynced: 14,
-    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    timestamp: safeTime(new Date()),
   };
 }

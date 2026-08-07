@@ -1,6 +1,7 @@
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import type { CalendarViewMode } from "@/hooks/time/useCalendar";
 import { TitanButton } from "@/components/ui";
+import { safeDate, safeDateString } from "@/utils/safeDate";
 
 interface CalendarToolbarProps {
   viewMode: CalendarViewMode;
@@ -22,18 +23,20 @@ export default function CalendarToolbar({
   onQuickAdd,
 }: CalendarToolbarProps) {
   const handlePrev = () => {
-    const next = new Date(selectedDate);
+    const valid = safeDate(selectedDate) || new Date();
+    const next = new Date(valid);
     next.setDate(next.getDate() - 7);
     onDateChange(next);
   };
 
   const handleNext = () => {
-    const next = new Date(selectedDate);
+    const valid = safeDate(selectedDate) || new Date();
+    const next = new Date(valid);
     next.setDate(next.getDate() + 7);
     onDateChange(next);
   };
 
-  const formattedDate = selectedDate.toLocaleDateString("en-US", {
+  const formattedDate = safeDateString(selectedDate, {
     month: "short",
     year: "numeric",
   });

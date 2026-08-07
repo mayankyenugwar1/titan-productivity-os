@@ -1,6 +1,7 @@
 import { Activity, Play, Power, Trash2, Zap } from "lucide-react";
 import type { Workflow } from "@/services/automation/workflowService";
 import { TitanBadge } from "@/components/ui";
+import { safeTime } from "@/utils/safeDate";
 
 interface WorkflowCardProps {
   workflow: Workflow;
@@ -83,7 +84,7 @@ export default function WorkflowCard({
           <Activity className="size-3 text-sky-400" /> {workflow.runCount} Executions
         </span>
         <span className="font-mono text-zinc-500">
-          {workflow.lastRunAt ? new Date(workflow.lastRunAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Never run"}
+          {workflow.lastRunAt ? safeTime(workflow.lastRunAt, { hour: "2-digit", minute: "2-digit" }, "Never run") : "Never run"}
         </span>
       </div>
     </div>

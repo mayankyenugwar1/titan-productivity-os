@@ -1,3 +1,5 @@
+import { safeISOString } from "@/utils/safeDate";
+
 export type KnowledgeType =
   | "Note"
   | "Research"
@@ -35,7 +37,7 @@ export function calculateReadingTime(wordCount: number): number {
 }
 
 export function getInitialKnowledgeItems(): KnowledgeItem[] {
-  const now = new Date().toISOString();
+  const now = safeISOString(new Date());
   return [
     {
       id: "note-1",

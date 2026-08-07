@@ -1,3 +1,5 @@
+import { safeISOString } from "@/utils/safeDate";
+
 export type EventType =
   | "MISSION_COMPLETED"
   | "MISSION_CREATED"
@@ -38,7 +40,7 @@ class EventBusService {
     const event: SystemEvent = {
       type: eventType,
       payload,
-      timestamp: new Date().toISOString(),
+      timestamp: safeISOString(new Date()),
     };
 
     const targetListeners = this.listeners.get(eventType) || [];

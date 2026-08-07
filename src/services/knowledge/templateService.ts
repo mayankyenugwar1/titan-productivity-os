@@ -1,3 +1,5 @@
+import { safeDateString } from "@/utils/safeDate";
+
 export interface KnowledgeTemplate {
   id: string;
   name: string;
@@ -14,7 +16,7 @@ export const KNOWLEDGE_TEMPLATES: KnowledgeTemplate[] = [
     description: "Structure key decisions, action items, and attendee notes.",
     category: "Operations",
     defaultTitle: "Meeting Notes — [Topic]",
-    defaultContent: `# Meeting Notes — [Topic]\n\n**Date:** ${new Date().toLocaleDateString()}\n**Attendees:** Operator Prime\n\n## 1. Key Objectives\n- Objective 1\n- Objective 2\n\n## 2. Action Directives\n- [ ] Action item 1\n- [ ] Action item 2\n\n## 3. Notes & Decisions\nSummary of discussion items.`,
+    defaultContent: `# Meeting Notes — [Topic]\n\n**Date:** ${safeDateString(new Date())}\n**Attendees:** Operator Prime\n\n## 1. Key Objectives\n- Objective 1\n- Objective 2\n\n## 2. Action Directives\n- [ ] Action item 1\n- [ ] Action item 2\n\n## 3. Notes & Decisions\nSummary of discussion items.`,
   },
   {
     id: "tmpl-research",
@@ -29,8 +31,8 @@ export const KNOWLEDGE_TEMPLATES: KnowledgeTemplate[] = [
     name: "Daily Journal Entry",
     description: "Daily reflection, wins, lessons learned, and focus score notes.",
     category: "Personal",
-    defaultTitle: "Daily Journal — " + new Date().toLocaleDateString(),
-    defaultContent: `# Daily Journal — ${new Date().toLocaleDateString()}\n\n## Daily Reflection\nSummary of today's operational achievements.\n\n## Wins & Highlights\n- Win 1\n- Win 2\n\n## Lessons Learned\n- Key insight gained today.`,
+    defaultTitle: "Daily Journal — " + safeDateString(new Date()),
+    defaultContent: `# Daily Journal — ${safeDateString(new Date())}\n\n## Daily Reflection\nSummary of today's operational achievements.\n\n## Wins & Highlights\n- Win 1\n- Win 2\n\n## Lessons Learned\n- Key insight gained today.`,
   },
   {
     id: "tmpl-weekly",

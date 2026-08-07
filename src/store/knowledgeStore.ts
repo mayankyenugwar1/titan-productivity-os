@@ -6,6 +6,9 @@ import {
   type KnowledgeItem,
   type KnowledgeType,
 } from "@/services/knowledge/knowledgeService";
+import { safeISOString } from "@/utils/safeDate";
+
+export type { KnowledgeItem, KnowledgeType };
 
 interface KnowledgeStoreState {
   items: KnowledgeItem[];
@@ -39,7 +42,7 @@ export const useKnowledgeStore = create<KnowledgeStoreState>((set) => ({
   setEditorMode: (editorMode) => set({ editorMode }),
 
   createNote: (title, content, type, category, tags = []) => {
-    const now = new Date().toISOString();
+    const now = safeISOString(new Date());
     const wordCount = calculateWordCount(content);
     const newItem: KnowledgeItem = {
       id: `note-${Date.now()}`,
@@ -63,7 +66,7 @@ export const useKnowledgeStore = create<KnowledgeStoreState>((set) => ({
   },
 
   updateNote: (id, updates) => {
-    const now = new Date().toISOString();
+    const now = safeISOString(new Date());
     set((state) => ({
       items: state.items.map((item) => {
         if (item.id !== id) return item;

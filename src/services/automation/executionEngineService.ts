@@ -2,6 +2,7 @@ import type { Workflow } from "@/services/automation/workflowService";
 import { useHabitStore } from "@/store/missionStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useKnowledgeStore } from "@/store/knowledgeStore";
+import { safeDateKey, safeTime } from "@/utils/safeDate";
 
 export interface ExecutionLog {
   id: string;
@@ -52,7 +53,7 @@ export function executeWorkflowNodeGraph(
         description: "Auto-generated goal via Automation OS Engine",
         category: "Operations",
         priority: "High",
-        targetDate: new Date(Date.now() + 864000000).toISOString().split("T")[0],
+        targetDate: safeDateKey(new Date(Date.now() + 864000000)),
         keyResults: [
           {
             id: `kr-${Date.now()}`,
@@ -77,7 +78,7 @@ export function executeWorkflowNodeGraph(
       message: `Successfully executed ${actionsExecuted} action(s) for "${workflow.name}".`,
       actionsExecuted,
       durationMs: durationMs || 12,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date()),
     };
   } catch (err) {
     const durationMs = Math.round(performance.now() - startTime);
@@ -89,7 +90,7 @@ export function executeWorkflowNodeGraph(
       message: `Execution failed: ${err instanceof Error ? err.message : "Unknown error"}`,
       actionsExecuted: 0,
       durationMs: durationMs || 15,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date()),
     };
   }
 }

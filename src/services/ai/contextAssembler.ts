@@ -3,6 +3,7 @@ import type { Project, Goal } from "@/services/projects/projectService";
 import type { KnowledgeItem } from "@/services/knowledge/knowledgeService";
 import type { Workflow } from "@/services/automation/workflowService";
 import { getProgressionDetails } from "@/services/xpEngineService";
+import { safeISOString } from "@/utils/safeDate";
 
 export interface ExtendedAIContextPayload {
   habits: Habit[];
@@ -33,15 +34,15 @@ export function assembleExtendedAIContext(
   focusScore: number
 ): ExtendedAIContextPayload {
   const progression = getProgressionDetails(totalXP);
-  const activeMissionsCount = habits.filter((h) => !h.completed).length;
-  const completedMissionsCount = habits.filter((h) => h.completed).length;
+  const activeMissionsCount = (habits || []).filter((h) => !h.completed).length;
+  const completedMissionsCount = (habits || []).filter((h) => h.completed).length;
 
   return {
-    habits,
-    projectsCount: projects.length,
-    goalsCount: goals.length,
-    notesCount: notes.length,
-    workflowsCount: workflows.length,
+    habits: habits || [],
+    projectsCount: (projects || []).length,
+    goalsCount: (goals || []).length,
+    notesCount: (notes || []).length,
+    workflowsCount: (workflows || []).length,
     activeMissionsCount,
     completedMissionsCount,
     totalXP,
@@ -49,7 +50,7 @@ export function assembleExtendedAIContext(
     focusScore,
     level: progression.level,
     rank: progression.rank,
-    timestamp: new Date().toISOString(),
+    timestamp: safeISOString(new Date()),
   };
 }
 

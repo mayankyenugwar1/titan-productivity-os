@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { safeDateString, safeTime } from "@/utils/safeDate";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -41,16 +42,16 @@ export default function CommandCenterHero({ onNewMission }: CommandCenterHeroPro
   const getGreeting = () => greetingInfo.salutation;
 
   const formattedDate = useMemo(() => {
-    return new Intl.DateTimeFormat("en-GB", {
+    return safeDateString(time, {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
-    }).format(time);
+    });
   }, [time]);
 
   const formattedTime = useMemo(() => {
-    return time.toLocaleTimeString("en-GB", {
+    return safeTime(time, {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",

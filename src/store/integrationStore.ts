@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { SUPPORTED_PROVIDERS, type IntegrationProviderInfo } from "@/services/integrations/providerRegistry";
 import { performProviderSync, type SyncLogEntry } from "@/services/integrations/syncEngine";
 import { INITIAL_CONFLICTS, resolveConflict, type SyncConflictRecord } from "@/services/integrations/conflictResolverService";
+import { safeISOString, safeTime } from "@/utils/safeDate";
 
 interface IntegrationStoreState {
   providers: IntegrationProviderInfo[];
@@ -28,7 +29,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
       status: "SUCCESS",
       message: "Synchronized 8 event directives.",
       itemsSynced: 8,
-      timestamp: new Date(Date.now() - 1800000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date(Date.now() - 1800000)),
     },
     {
       id: "synclog-init-2",
@@ -37,7 +38,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
       status: "SUCCESS",
       message: "Pulled 4 pull request reviews into Mission Control.",
       itemsSynced: 4,
-      timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date(Date.now() - 3600000)),
     },
   ],
   conflicts: INITIAL_CONFLICTS,
@@ -50,7 +51,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
     set((state) => ({
       providers: state.providers.map((p) =>
         p.id === providerId
-          ? { ...p, status: "CONNECTED", lastSyncedAt: new Date().toISOString() }
+          ? { ...p, status: "CONNECTED", lastSyncedAt: safeISOString(new Date()) }
           : p
       ),
     }));
@@ -73,7 +74,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
         isSyncing: false,
         syncLogs: [logEntry, ...state.syncLogs],
         providers: state.providers.map((p) =>
-          p.id === providerId ? { ...p, status: "CONNECTED", lastSyncedAt: new Date().toISOString() } : p
+          p.id === providerId ? { ...p, status: "CONNECTED", lastSyncedAt: safeISOString(new Date()) } : p
         ),
       }));
     }, 600);
@@ -89,7 +90,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
         isSyncing: false,
         syncLogs: [...newLogs, ...state.syncLogs],
         providers: state.providers.map((p) =>
-          p.status === "CONNECTED" ? { ...p, lastSyncedAt: new Date().toISOString() } : p
+          p.status === "CONNECTED" ? { ...p, lastSyncedAt: safeISOString(new Date()) } : p
         ),
       }));
     }, 1000);
@@ -111,7 +112,7 @@ export const useIntegrationStore = create<IntegrationStoreState>((set, get) => (
           status: "SUCCESS",
           message: resMessage,
           itemsSynced: 1,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: safeTime(new Date()),
         },
         ...state.syncLogs,
       ],

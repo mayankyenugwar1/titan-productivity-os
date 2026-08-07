@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { safeDate } from "@/utils/safeDate";
 import { motion } from "framer-motion";
 import {
   Award,
@@ -135,7 +136,9 @@ export default function MissionList({
       if (sortBy === "Duration") {
         return getDurationSortOrder(a.duration, a.priority) - getDurationSortOrder(b.duration, b.priority);
       }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      const timeA = (safeDate(a.createdAt) || new Date(0)).getTime();
+      const timeB = (safeDate(b.createdAt) || new Date(0)).getTime();
+      return timeB - timeA;
     });
   }, [habits, searchQuery, activeFilter, sortBy]);
 

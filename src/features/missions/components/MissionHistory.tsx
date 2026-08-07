@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { safeDate, safeDateString } from "@/utils/safeDate";
 import { Award, Calendar, CheckCircle2, ChevronRight, Filter, Flame, History, Search } from "lucide-react";
 
 import type { Habit } from "../types";
@@ -49,8 +50,8 @@ export default function MissionHistory({ habits }: MissionHistoryProps) {
         return calculateDifficultyStars(b) - calculateDifficultyStars(a);
       }
       // Default: Date
-      const dateA = a.completedAt ? new Date(a.completedAt).getTime() : new Date(a.createdAt).getTime();
-      const dateB = b.completedAt ? new Date(b.completedAt).getTime() : new Date(b.createdAt).getTime();
+      const dateA = (safeDate(a.completedAt) || safeDate(a.createdAt) || new Date(0)).getTime();
+      const dateB = (safeDate(b.completedAt) || safeDate(b.createdAt) || new Date(0)).getTime();
       return dateB - dateA;
     });
   }, [completedMissions, searchQuery, categoryFilter, sortBy]);
@@ -169,8 +170,7 @@ export default function MissionHistory({ habits }: MissionHistoryProps) {
           <div className="space-y-3">
             {processedList.map((habit) => {
               const stars = calculateDifficultyStars(habit);
-              const dateObj = habit.completedAt ? new Date(habit.completedAt) : new Date(habit.createdAt);
-              const completionDateStr = dateObj.toLocaleDateString("en-US", {
+              const completionDateStr = safeDateString(habit.completedAt || habit.createdAt, {
                 month: "short",
                 day: "2-digit",
                 year: "numeric",

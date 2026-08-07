@@ -1,4 +1,5 @@
 import type { EventType } from "./eventBusService";
+import { safeISOString } from "@/utils/safeDate";
 
 export interface WorkflowTrigger {
   eventType: EventType;
@@ -53,7 +54,7 @@ export function getInitialWorkflows(): Workflow[] {
         { actionType: "AWARD_XP", label: "Award +50 Operational Bonus XP", params: { xp: 50 } },
       ],
       runCount: 14,
-      lastRunAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+      lastRunAt: safeISOString(new Date(Date.now() - 3600000 * 4)),
     },
     {
       id: "wf-2",
@@ -66,7 +67,7 @@ export function getInitialWorkflows(): Workflow[] {
         { actionType: "CREATE_NOTE", label: "Create Knowledge OS Journal Log", params: { category: "Journal" } },
       ],
       runCount: 8,
-      lastRunAt: new Date(Date.now() - 3600000 * 12).toISOString(),
+      lastRunAt: safeISOString(new Date(Date.now() - 3600000 * 12)),
     },
   ];
 }

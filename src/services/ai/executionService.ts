@@ -4,6 +4,7 @@ import { useProjectStore } from "@/store/projectStore";
 import { useKnowledgeStore } from "@/store/knowledgeStore";
 import { useAutomationStore } from "@/store/automationStore";
 import { sanitizeCategory } from "@/constants/categories";
+import { safeDateKey, safeTime } from "@/utils/safeDate";
 
 export interface ExecutionProposal {
   id: string;
@@ -20,7 +21,7 @@ export function createProposalFromIntent(intent: StructuredIntent): ExecutionPro
   if (intent.intent === "UNKNOWN") return null;
 
   const id = `prop-${Date.now()}`;
-  const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const timestamp = safeTime(new Date(), { hour: "2-digit", minute: "2-digit" });
 
   switch (intent.intent) {
     case "CREATE_MISSION":
@@ -111,7 +112,7 @@ export async function executeProposal(proposal: ExecutionProposal, userId: strin
       }
 
       case "CREATE_PROJECT": {
-        const today = new Date().toISOString().split("T")[0];
+        const today = safeDateKey(new Date());
         createProject({
           name: proposal.parameters.name || "AI Generated Project",
           description: "Initiated via AI Commander Directive",

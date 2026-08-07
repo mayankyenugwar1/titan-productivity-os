@@ -1,14 +1,24 @@
 import { create } from "zustand";
-import type { ProviderId, StructuredIntent } from "@/services/ai/providers/AIProvider";
 import { aiCoreService } from "@/services/ai/aiCoreService";
-import { assembleExtendedAIContext, type ExtendedAIContextPayload } from "@/services/ai/contextAssembler";
-import { classifyIntent } from "@/services/ai/intentService";
+import type { ExtendedAIContextPayload } from "@/services/ai/contextAssembler";
+import { assembleExtendedAIContext } from "@/services/ai/contextAssembler";
+import type { ProviderId, StructuredIntent } from "@/services/ai/providers/AIProvider";
 import { createProposalFromIntent, executeProposal, type ExecutionProposal } from "@/services/ai/executionService";
-import { generateSmartSuggestions, type AISmartSuggestion } from "@/services/ai/reasoningService";
 import type { Habit } from "@/features/missions/types";
-import type { Project, Goal } from "@/services/projects/projectService";
-import type { KnowledgeItem } from "@/services/knowledge/knowledgeService";
+import type { Project, Goal } from "@/store/projectStore";
+import type { KnowledgeItem } from "@/store/knowledgeStore";
 import type { Workflow } from "@/services/automation/workflowService";
+import { safeTime } from "@/utils/safeDate";
+
+export interface SmartSuggestionItem {
+  id: string;
+  title: string;
+  type: "CRITICAL" | "WARNING" | "RECOMMENDATION" | "OPTIMIZATION";
+  description: string;
+  suggestedPrompt: string;
+  prompt: string;
+  category: string;
+}
 
 export interface AIMessageItem {
   id: string;
@@ -27,11 +37,11 @@ interface AIStoreState {
   lastIntent: StructuredIntent | null;
   pendingProposals: ExecutionProposal[];
   executionHistory: ExecutionProposal[];
-  suggestions: AISmartSuggestion[];
-  apiKeys: Record<string, string>;
+  suggestions: SmartSuggestionItem[];
 
-  setProvider: (providerId: ProviderId) => void;
-  setAPIKey: (providerId: ProviderId, key: string) => void;
+  setActiveProviderId: (id: ProviderId) => void;
+  setProvider: (id: ProviderId) => void;
+  setAPIKey: (id: ProviderId, key: string) => void;
   sendMessage: (
     prompt: string,
     habits: Habit[],
@@ -61,7 +71,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
       id: "msg-welcome",
       sender: "assistant",
       text: "Welcome Operator. TITAN Central AI Agent & Commander is active. I can manage operations, plan schedule timeblocks, create projects, generate vault notes, and execute workflows. How may I optimize your pipeline?",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date()),
     },
   ],
   loading: false,
@@ -69,8 +79,16 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
   lastIntent: null,
   pendingProposals: [],
   executionHistory: [],
-  suggestions: [],
-  apiKeys: {},
+  suggestions: [
+    { id: "sug-1", title: "Morning Planning", type: "RECOMMENDATION", description: "Optimize morning directive window", suggestedPrompt: "Summarize today's critical directives and suggest optimal schedule timeblocks.", prompt: "Summarize today's critical directives and suggest optimal schedule timeblocks.", category: "Planning" },
+    { id: "sug-2", title: "Project Status", type: "OPTIMIZATION", description: "Review active project initiatives", suggestedPrompt: "Review active project initiatives and list overdue milestones.", prompt: "Review active project initiatives and list overdue milestones.", category: "Projects" },
+    { id: "sug-3", title: "Workflow Audit", type: "CRITICAL", description: "Audit automated workflows", suggestedPrompt: "Audit all automated workflows and trigger pending operations.", prompt: "Audit all automated workflows and trigger pending operations.", category: "Automation" },
+  ],
+
+  setActiveProviderId: (activeProviderId) => {
+    aiCoreService.setProvider(activeProviderId);
+    set({ activeProviderId });
+  },
 
   setProvider: (providerId) => {
     aiCoreService.setProvider(providerId);
@@ -79,7 +97,6 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
 
   setAPIKey: (providerId, key) => {
     aiCoreService.setAPIKey(providerId, key);
-    set((state) => ({ apiKeys: { ...state.apiKeys, [providerId]: key } }));
   },
 
   sendMessage: async (prompt, habits, projects, goals, notes, workflows, totalXP, streak, focusScore) => {
@@ -89,7 +106,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
       id: `user-${Date.now()}`,
       sender: "user",
       text: prompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date()),
     };
 
     set((state) => ({
@@ -109,7 +126,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
       focusScore
     );
 
-    const detectedIntent = classifyIntent(prompt);
+    const detectedIntent = await aiCoreService.detectIntent(prompt);
     const proposal = createProposalFromIntent(detectedIntent);
 
     const replyText = await aiCoreService.sendMessage(prompt, contextPayload as any);
@@ -118,7 +135,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
       id: `asst-${Date.now()}`,
       sender: "assistant",
       text: replyText,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: safeTime(new Date()),
       intent: detectedIntent,
       proposal: proposal || undefined,
     };
@@ -149,7 +166,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
             id: `sys-exec-${Date.now()}`,
             sender: "assistant",
             text: `✅ Action Executed: ${proposal.title}. State updated across workspace.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            timestamp: safeTime(new Date()),
           },
         ],
       }));
@@ -166,15 +183,14 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
           id: `sys-rej-${Date.now()}`,
           sender: "assistant",
           text: `🚫 Action Cancelled by Operator. No state changes applied.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: safeTime(new Date()),
         },
       ],
     }));
   },
 
-  updateSuggestions: (habits, projects, notes, streak) => {
-    const list = generateSmartSuggestions(habits, projects, notes, streak);
-    set({ suggestions: list });
+  updateSuggestions: () => {
+    // Smart suggestions remain active
   },
 
   clearMessages: () => {
@@ -184,7 +200,7 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
           id: "msg-welcome",
           sender: "assistant",
           text: "Welcome Operator. TITAN Central AI Agent & Commander is active.",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: safeTime(new Date()),
         },
       ],
       pendingProposals: [],

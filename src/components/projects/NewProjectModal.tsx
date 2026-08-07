@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { safeDateKey } from "@/utils/safeDate";
 import { AnimatePresence, motion } from "framer-motion";
 import { FolderPlus, X } from "lucide-react";
 import { TitanButton } from "@/components/ui";
@@ -23,7 +24,7 @@ export default function NewProjectModal({ open, onClose, onCreateProject }: NewP
     e.preventDefault();
     if (!name.trim()) return;
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = safeDateKey(new Date());
     onCreateProject({
       name: name.trim(),
       description: description.trim(),

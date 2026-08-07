@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getInitialWorkflows, type ExecutionRecord, type Workflow } from "@/services/automation/workflowService";
+import { safeISOString } from "@/utils/safeDate";
 
 export type { ExecutionRecord, Workflow };
 export type AutomationWorkflow = Workflow;
@@ -30,7 +31,7 @@ export const useAutomationStore = create<AutomationStoreState>((set, get) => ({
       workflowId: "wf-1",
       workflowName: "Morning Focus Protocol",
       status: "SUCCESS",
-      timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+      timestamp: safeISOString(new Date(Date.now() - 3600000 * 2)),
       durationMs: 42,
       logs: ["Trigger 'SCHEDULED_TICK' matched", "Condition 'time == 08:00' evaluated TRUE", "Action 'CREATE_MISSION' executed (+50 XP)"],
     },
@@ -39,7 +40,7 @@ export const useAutomationStore = create<AutomationStoreState>((set, get) => ({
       workflowId: "wf-2",
       workflowName: "Streak Preservation Alert & Journal Auto-Entry",
       status: "SUCCESS",
-      timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
+      timestamp: safeISOString(new Date(Date.now() - 3600000 * 6)),
       durationMs: 35,
       logs: ["Trigger 'MISSION_COMPLETED' matched", "Action 'CREATE_NOTE' executed in Knowledge Vault"],
     },
@@ -63,7 +64,7 @@ export const useAutomationStore = create<AutomationStoreState>((set, get) => ({
     const wf = state.workflows.find((w) => w.id === id);
     if (!wf) return;
 
-    const now = new Date().toISOString();
+    const now = safeISOString(new Date());
     const newExec: ExecutionRecord = {
       id: `exec-${Date.now()}`,
       workflowId: wf.id,

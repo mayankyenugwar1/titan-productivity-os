@@ -1,6 +1,7 @@
 import { Activity, CheckCircle2, Terminal, XCircle } from "lucide-react";
 import type { ExecutionRecord } from "@/services/automation/workflowService";
 import { TitanBadge } from "@/components/ui";
+import { safeTime } from "@/utils/safeDate";
 
 interface ExecutionHistoryPanelProps {
   history: ExecutionRecord[];
@@ -38,7 +39,7 @@ export default function ExecutionHistoryPanel({ history }: ExecutionHistoryPanel
                 </div>
                 <div className="flex items-center gap-3 font-mono text-[10px] text-zinc-500">
                   <span>{rec.durationMs}ms</span>
-                  <span>{new Date(rec.timestamp).toLocaleTimeString()}</span>
+                  <span>{safeTime(rec.timestamp)}</span>
                 </div>
               </div>
 

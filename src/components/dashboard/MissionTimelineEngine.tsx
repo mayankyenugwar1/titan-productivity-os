@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { safeTime } from "@/utils/safeDate";
 import { motion } from "framer-motion";
 import {
   BookOpen,
@@ -35,7 +36,8 @@ function computePriorityScore(habit: Habit): number {
 
 function getScheduledTime(habit: Habit, index: number): string {
   if (habit.completedAt) {
-    return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }).format(habit.completedAt);
+    const formatted = safeTime(habit.completedAt, { hour: "2-digit", minute: "2-digit", hour12: false });
+    if (formatted !== "—") return formatted;
   }
   const baseHour = 7 + (index * 4) % 16;
   const hourStr = baseHour < 10 ? `0${baseHour}` : `${baseHour}`;

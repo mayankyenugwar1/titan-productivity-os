@@ -1,3 +1,5 @@
+import { safeISOString } from "@/utils/safeDate";
+
 export type LogLevel = "INFO" | "WARN" | "ERROR" | "TELEMETRY";
 
 export interface LogPayload {
@@ -16,7 +18,7 @@ export function logEvent(level: LogLevel, module: string, message: string, data?
     module,
     message,
     data,
-    timestamp: new Date().toISOString(),
+    timestamp: safeISOString(new Date()),
   };
 
   LOG_HISTORY.unshift(entry);

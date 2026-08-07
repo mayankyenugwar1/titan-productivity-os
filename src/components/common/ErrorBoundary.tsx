@@ -23,8 +23,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logEvent("ERROR", "REACT_ERROR_BOUNDARY", error.message, errorInfo);
-  }
+  console.group("🔥 TITAN CRASH");
+
+  console.error("MESSAGE:");
+  console.error(error.message);
+
+  console.error("STACK:");
+  console.error(error.stack);
+
+  console.error("COMPONENT:");
+  console.error(errorInfo.componentStack);
+
+  console.groupEnd();
+
+  logEvent("ERROR", "REACT_ERROR_BOUNDARY", error.message, errorInfo);
+}
 
   private handleReload = () => {
     window.location.reload();

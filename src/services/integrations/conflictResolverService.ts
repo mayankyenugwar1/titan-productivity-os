@@ -1,3 +1,5 @@
+import { safeTime } from "@/utils/safeDate";
+
 export interface SyncConflictRecord {
   id: string;
   providerId: string;
@@ -32,7 +34,7 @@ export const INITIAL_CONFLICTS: SyncConflictRecord[] = [
       updatedAt: "Today 09:00",
       status: "Scheduled",
     },
-    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    timestamp: safeTime(new Date()),
   },
 ];
 

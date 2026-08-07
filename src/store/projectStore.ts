@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { safeDateKey } from "@/utils/safeDate";
 import {
   getInitialGoals,
   getInitialProjects,
@@ -48,7 +49,7 @@ export const useProjectStore = create<ProjectStoreState>((set) => ({
 
   createProject: (projectInput) => {
     const projId = `proj-${Date.now()}`;
-    const today = new Date().toISOString().split("T")[0];
+    const today = safeDateKey(new Date());
     const newProject: Project = {
       id: projId,
       milestones: [

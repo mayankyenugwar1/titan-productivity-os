@@ -8,22 +8,46 @@ import {
 
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { parseAuthError, type FriendlyAuthResult } from "@/utils/authErrorHandler";
+
+export interface AuthOperationResponse {
+  data?: {
+    user: User | null;
+    session: Session | null;
+    requiresVerification?: boolean;
+  } | null;
+  error?: FriendlyAuthResult | null;
+}
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<AuthOperationResponse>;
   signUp: (
     fullName: string,
     username: string,
     email: string,
     password: string
-  ) => Promise<any>;
+  ) => Promise<AuthOperationResponse>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper timeout wrapper for network requests (15s deadline)
+async function withTimeout<T>(promise: Promise<T>, timeoutMs = 15000): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error("Authentication request timed out. Please try again."));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timer);
+  });
+}
 
 export function AuthProvider({
   children,
@@ -35,34 +59,70 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    const getInitialSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.warn("[TITAN AUTH] Initial session fetch warning:", err);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     };
 
-    getInitialSession();
+    void getInitialSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  async function signIn(email: string, password: string) {
-    return await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  async function signIn(email: string, password: string): Promise<AuthOperationResponse> {
+    try {
+      const response = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        })
+      );
+
+      if (response.error) {
+        const friendly = parseAuthError(response.error, email);
+        return { error: friendly };
+      }
+
+      return {
+        data: {
+          user: response.data.user,
+          session: response.data.session,
+        },
+        error: null,
+      };
+    } catch (err) {
+      const friendly = parseAuthError(err, email);
+      return { error: friendly };
+    }
   }
 
   async function signUp(
@@ -70,32 +130,58 @@ export function AuthProvider({
     username: string,
     email: string,
     password: string
-  ) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
+  ): Promise<AuthOperationResponse> {
+    const cleanEmail = email.trim();
+    const cleanFullName = fullName.trim();
+    const cleanUsername = username.trim();
+
+    try {
+      const response = await withTimeout(
+        supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: cleanFullName,
+              username: cleanUsername,
+            },
+          },
+        })
+      );
+
+      if (response.error) {
+        const friendly = parseAuthError(response.error, cleanEmail);
+        return { error: friendly };
+      }
+
+      // Check if email confirmation is enabled in Supabase
+      const requiresVerification = Boolean(
+        response.data.user && (!response.data.session || response.data.user.identities?.length === 0)
+      );
+
+      return {
         data: {
-          full_name: fullName,
-          username: username,
+          user: response.data.user,
+          session: response.data.session,
+          requiresVerification,
         },
-      },
-    });
-
-    if (error) {
-      return { error };
+        error: null,
+      };
+    } catch (err) {
+      const friendly = parseAuthError(err, cleanEmail);
+      return { error: friendly };
     }
-
-    // The profile is created automatically by the
-    // handle_new_user() trigger in Supabase.
-    return {
-      data,
-      error: null,
-    };
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("[TITAN AUTH] SignOut warning:", err);
+    } finally {
+      setUser(null);
+      setSession(null);
+    }
   }
 
   return (

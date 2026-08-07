@@ -8,6 +8,7 @@ import {
   calculateProductivityScore,
   generateMorningBriefing,
 } from "@/services/commandCenter/dashboardService";
+import { safeTime } from "@/utils/safeDate";
 
 export function useDashboard() {
   const { habits, streak, totalXP } = useHabitStore();
@@ -30,16 +31,16 @@ export function useDashboard() {
   const recentActivity = useMemo(() => {
     const list: { id: string; text: string; time: string; type: string }[] = [];
 
-    habits.slice(0, 3).forEach((h) => {
+    (habits || []).slice(0, 3).forEach((h) => {
       list.push({
         id: `act-h-${h.id}`,
         text: `Mission "${h.title}" state: ${h.completed ? "Accomplished (+XP)" : "Queued in Mission OS"}`,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: safeTime(new Date()),
         type: "Mission",
       });
     });
 
-    notes.slice(0, 2).forEach((n) => {
+    (notes || []).slice(0, 2).forEach((n) => {
       list.push({
         id: `act-n-${n.id}`,
         text: `Knowledge entry "${n.title}" created in Vault`,
@@ -48,7 +49,7 @@ export function useDashboard() {
       });
     });
 
-    workflows.slice(0, 2).forEach((w) => {
+    (workflows || []).slice(0, 2).forEach((w) => {
       list.push({
         id: `act-w-${w.id}`,
         text: `Workflow "${w.name}" executed via Event Bus`,

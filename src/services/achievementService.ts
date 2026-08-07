@@ -1,6 +1,7 @@
 import type { Habit } from "@/features/missions/types";
 import { calculateLevel } from "./xpEngineService";
 import { sanitizeCategory } from "@/constants/categories";
+import { safeISOString } from "@/utils/safeDate";
 
 export interface Achievement {
   id: string;
@@ -17,14 +18,14 @@ export interface Achievement {
 }
 
 export function evaluateAchievements(habits: Habit[], totalXP: number, streak: number): Achievement[] {
-  const completedMissions = habits.filter((h) => h.completed || h.history.length > 0);
+  const completedMissions = (habits || []).filter((h) => h.completed || (h.history && h.history.length > 0));
   const completedCount = completedMissions.length;
   const currentLevel = calculateLevel(totalXP);
 
-  const physicalCount = habits.filter((h) => (sanitizeCategory(h.category) === "Physical" || sanitizeCategory(h.category) === "Fitness") && (h.completed || h.history.length > 0)).length;
-  const codingCount = habits.filter((h) => (sanitizeCategory(h.category) === "Operations" || sanitizeCategory(h.category) === "Coding") && (h.completed || h.history.length > 0)).length;
-  const studyCount = habits.filter((h) => (sanitizeCategory(h.category) === "Knowledge" || sanitizeCategory(h.category) === "Reading") && (h.completed || h.history.length > 0)).length;
-  const criticalCount = habits.filter((h) => h.priority === "High" && (h.completed || h.history.length > 0)).length;
+  const physicalCount = (habits || []).filter((h) => (sanitizeCategory(h.category) === "Physical" || sanitizeCategory(h.category) === "Fitness") && (h.completed || (h.history && h.history.length > 0))).length;
+  const codingCount = (habits || []).filter((h) => (sanitizeCategory(h.category) === "Operations" || sanitizeCategory(h.category) === "Coding") && (h.completed || (h.history && h.history.length > 0))).length;
+  const studyCount = (habits || []).filter((h) => (sanitizeCategory(h.category) === "Knowledge" || sanitizeCategory(h.category) === "Reading") && (h.completed || (h.history && h.history.length > 0))).length;
+  const criticalCount = (habits || []).filter((h) => h.priority === "High" && (h.completed || (h.history && h.history.length > 0))).length;
   const totalCoins = Math.round(totalXP / 10);
 
   const rawAchievements: Omit<Achievement, "progress" | "unlocked">[] = [
@@ -84,7 +85,7 @@ export function evaluateAchievements(habits: Habit[], totalXP: number, streak: n
       ...ach,
       progress,
       unlocked,
-      unlockedAt: unlocked ? new Date().toISOString() : undefined,
+      unlockedAt: unlocked ? safeISOString(new Date()) : undefined,
     };
   });
 }
