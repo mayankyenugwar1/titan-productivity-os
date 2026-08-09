@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useKnowledgeStore } from "@/store/knowledgeStore";
 import { SectionHeader, TitanButton } from "@/components/ui";
 import KnowledgeSidebar from "@/components/knowledge/KnowledgeSidebar";
@@ -7,8 +7,12 @@ import KnowledgeGraphWidget from "@/components/knowledge/KnowledgeGraphWidget";
 import AISecondBrainPanel from "@/components/knowledge/AISecondBrainPanel";
 import KnowledgeTemplateGrid, { type KnowledgeTemplate } from "@/components/knowledge/KnowledgeTemplateGrid";
 import { Plus, Search } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function KnowledgePage() {
+  const { user } = useAuth();
+  const userId = user?.id || "local_user";
+
   const {
     items: notes,
     activeItemId,
@@ -16,12 +20,17 @@ export default function KnowledgePage() {
     searchQuery,
     setActiveItemId,
     setSearchQuery,
-    createNote,
-    updateNote,
-    deleteNote,
-    togglePin,
-    toggleFavorite,
+    loadNotes,
+    createNote: storeCreateNote,
+    updateNote: storeUpdateNote,
+    deleteNote: storeDeleteNote,
+    togglePin: storeTogglePin,
+    toggleFavorite: storeToggleFavorite,
   } = useKnowledgeStore();
+
+  useEffect(() => {
+    loadNotes(userId);
+  }, [loadNotes, userId]);
 
   const [activeTab, setActiveTab] = useState<"EDITOR" | "GRAPH" | "AI_ASSISTANT" | "TEMPLATES">("EDITOR");
 
@@ -94,7 +103,7 @@ export default function KnowledgePage() {
         <TitanButton
           size="sm"
           leftIcon={<Plus className="size-4" />}
-          onClick={() => createNote("New Knowledge Note", "Start drafting operational notes...", "Document", "Operations")}
+          onClick={() => storeCreateNote(userId, "New Knowledge Note", "Start drafting operational notes...", "Document", "Operations")}
         >
           NEW KNOWLEDGE NOTE
         </TitanButton>
@@ -115,7 +124,7 @@ export default function KnowledgePage() {
       {activeTab === "TEMPLATES" && (
         <KnowledgeTemplateGrid
           onUseTemplate={(tmpl: KnowledgeTemplate) => {
-            createNote(tmpl.name, tmpl.initialContent, "Document", tmpl.category, ["template"]);
+            storeCreateNote(userId, tmpl.name, tmpl.initialContent, "Document", tmpl.category, ["template"]);
             setActiveTab("EDITOR");
           }}
         />
@@ -141,9 +150,9 @@ export default function KnowledgePage() {
               items={filteredNotes}
               activeItemId={activeItemId}
               onSelect={(id) => setActiveItemId(id)}
-              onTogglePin={(id) => togglePin(id)}
-              onToggleFavorite={(id) => toggleFavorite(id)}
-              onDelete={(id) => deleteNote(id)}
+              onTogglePin={(id) => storeTogglePin(userId, id)}
+              onToggleFavorite={(id) => storeToggleFavorite(userId, id)}
+              onDelete={(id) => storeDeleteNote(userId, id)}
             />
 
             {/* Main Dual Visual/Markdown Editor */}
@@ -151,7 +160,7 @@ export default function KnowledgePage() {
               <KnowledgeEditor
                 note={activeNote}
                 editorMode={editorMode}
-                onUpdate={(id, updates) => updateNote(id, updates)}
+                onUpdate={(id, updates) => storeUpdateNote(userId, id, updates)}
               />
             </div>
           </div>

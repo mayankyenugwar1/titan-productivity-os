@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAutomationStore } from "@/store/automationStore";
 import { SectionHeader, TitanButton } from "@/components/ui";
 import AIWorkflowGeneratorBar from "@/components/automation/AIWorkflowGeneratorBar";
@@ -8,19 +8,28 @@ import ExecutionLogTable from "@/components/automation/ExecutionLogTable";
 import WorkflowCanvas from "@/components/automation/WorkflowCanvas";
 import NewWorkflowModal from "@/components/automation/NewWorkflowModal";
 import { Play, Plus, Zap } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AutomationPage() {
+  const { user } = useAuth();
+  const userId = user?.id || "local_user";
+
   const {
     workflows,
     executionHistory,
     activeWorkflowId,
     setActiveWorkflowId,
-    toggleWorkflow,
-    runWorkflowManually,
-    createWorkflow,
-    deleteWorkflow,
-    generateAIWorkflow,
+    loadAutomations,
+    toggleWorkflow: storeToggleWorkflow,
+    runWorkflowManually: storeRunManually,
+    createWorkflow: storeCreateWorkflow,
+    deleteWorkflow: storeDeleteWorkflow,
+    generateAIWorkflow: storeGenerateAI,
   } = useAutomationStore();
+
+  useEffect(() => {
+    loadAutomations(userId);
+  }, [loadAutomations, userId]);
 
   const [activeTab, setActiveTab] = useState<"CANVAS" | "TEMPLATES" | "HISTORY">("CANVAS");
   const [newModalOpen, setNewModalOpen] = useState(false);
@@ -40,7 +49,7 @@ export default function AutomationPage() {
       />
 
       {/* Natural Language AI Workflow Generator */}
-      <AIWorkflowGeneratorBar onGenerate={(prompt) => generateAIWorkflow(prompt)} />
+      <AIWorkflowGeneratorBar onGenerate={(prompt) => storeGenerateAI(userId, prompt)} />
 
       {/* Telemetry Analytics Header */}
       <AutomationAnalyticsWidget activeCount={activeCount} totalExecutions={executionHistory.length} />
@@ -86,7 +95,7 @@ export default function AutomationPage() {
               size="sm"
               variant="secondary"
               leftIcon={<Play className="size-3.5 text-emerald-400" />}
-              onClick={() => runWorkflowManually(activeWorkflow.id)}
+              onClick={() => storeRunManually(userId, activeWorkflow.id)}
             >
               RUN CURRENT WORKFLOW
             </TitanButton>
@@ -105,7 +114,7 @@ export default function AutomationPage() {
       {activeTab === "TEMPLATES" && (
         <TemplateMarketplaceGrid
           onUseTemplate={(tmpl) => {
-            createWorkflow({
+            storeCreateWorkflow(userId, {
               name: tmpl.name,
               description: tmpl.description,
               trigger: {
@@ -151,7 +160,7 @@ export default function AutomationPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleWorkflow(wf.id);
+                        storeToggleWorkflow(userId, wf.id);
                       }}
                       className={`size-3 rounded-full border ${
                         wf.enabled ? "bg-emerald-400 border-emerald-300" : "bg-zinc-700 border-zinc-600"
@@ -169,9 +178,9 @@ export default function AutomationPage() {
             {activeWorkflow ? (
               <WorkflowCanvas
                 workflow={activeWorkflow}
-                onToggleEnabled={() => toggleWorkflow(activeWorkflow.id)}
-                onRunManually={() => runWorkflowManually(activeWorkflow.id)}
-                onDelete={() => deleteWorkflow(activeWorkflow.id)}
+                onToggleEnabled={() => storeToggleWorkflow(userId, activeWorkflow.id)}
+                onRunManually={() => storeRunManually(userId, activeWorkflow.id)}
+                onDelete={() => storeDeleteWorkflow(userId, activeWorkflow.id)}
               />
             ) : (
               <div className="rounded-3xl border border-zinc-800/80 bg-[#070709] p-12 text-center text-zinc-500 font-sans space-y-2">
@@ -187,7 +196,7 @@ export default function AutomationPage() {
       <NewWorkflowModal
         open={newModalOpen}
         onClose={() => setNewModalOpen(false)}
-        onCreate={(data: any) => createWorkflow(data)}
+        onCreate={(data: any) => storeCreateWorkflow(userId, data)}
       />
     </div>
   );
