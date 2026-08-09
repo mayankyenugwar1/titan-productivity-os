@@ -25,7 +25,7 @@ export function searchUniversalOS(query: string): UniversalSearchResult[] {
     { id: "nav-[#cal]", category: "Navigation", title: "Time OS", description: "Multi-view Chrono Matrix calendar scheduling", href: "/calendar", iconName: "Calendar" },
     { id: "nav-[#ai]", category: "Navigation", title: "AI OS Core", description: "AI Agent Commander Headquarters & reasoning", href: "/ai-core", iconName: "Bot" },
     { id: "nav-[#kno]", category: "Navigation", title: "Knowledge OS", description: "Dual visual/markdown editor & Second Brain graph", href: "/knowledge", iconName: "BookOpen" },
-    { id: "nav-[#prj]", category: "Navigation", title: "Projects & Goals", description: "Kanban, timeline, roadmap & OKR goals", href: "/projects", iconName: "FolderKanban" },
+    { id: "nav-[#prj]", category: "Navigation", title: "Projects & Goals", description: "Mission Board, timeline, roadmap & OKR goals", href: "/projects", iconName: "FolderKanban" },
     { id: "nav-[#aut]", category: "Navigation", title: "Automation OS", description: "Universal no-code event bus & visual canvas", href: "/automation", iconName: "Zap" },
     { id: "nav-[#int]", category: "Navigation", title: "Integrations Hub", description: "Third-party integrations & sync control engine", href: "/integrations", iconName: "Network" },
     { id: "nav-[#ach]", category: "Navigation", title: "Achievements", description: "Rank progression tiers & unlocked badges", href: "/achievements", iconName: "Trophy" },

@@ -29,7 +29,7 @@ export default function ProjectsPage() {
       <SectionHeader
         badge="Wayne Strategic Execution Engine"
         title="TITAN Projects & Goals Operating System"
-        description="Centralized execution layer integrating Kanban columns, milestone timelines, strategic roadmaps, and OKRs."
+        description="Centralized execution layer integrating Mission Board columns, milestone timelines, strategic roadmaps, and OKRs."
       />
 
       {/* Main Toolbar */}

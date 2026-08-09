@@ -23,7 +23,7 @@ export default function ProjectsToolbar({
   onNewProject,
 }: ProjectsToolbarProps) {
   const views: { id: ProjectViewMode; label: string; icon: any }[] = [
-    { id: "kanban", label: "KANBAN", icon: Columns },
+    { id: "kanban", label: "MISSION BOARD", icon: Columns },
     { id: "timeline", label: "TIMELINE", icon: Calendar },
     { id: "roadmap", label: "ROADMAP", icon: Map },
     { id: "goals", label: "GOALS & OKRS", icon: Target },
