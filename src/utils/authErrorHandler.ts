@@ -73,10 +73,12 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     code === "rate_limit_exceeded" ||
     msg.includes("rate limit") ||
     msg.includes("too many requests") ||
-    msg.includes("email rate limit exceeded")
+    msg.includes("email rate limit exceeded") ||
+    msg.includes("limit reached") ||
+    msg.includes("authentication limit")
   ) {
     return {
-      message: "Authentication attempt limit reached. Please wait 2-3 minutes before trying again.",
+      message: "Too many authentication attempts. Please wait 5 minutes and try again.",
       code: "RATE_LIMIT_EXCEEDED",
       isRateLimit: true,
       isNetworkError: false,
