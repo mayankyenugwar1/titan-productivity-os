@@ -25,6 +25,7 @@ export function logAuthTechnicalError(action: string, error: unknown, email?: st
       code: err.code || err.status || "NO_CODE",
       status: err.status || "NO_STATUS",
       name: err.name || "Error",
+      error_description: err.error_description || "N/A",
       stack: err.stack,
     });
   } else {
@@ -45,27 +46,44 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
   }
 
   const errObj = typeof error === "object" ? (error as Record<string, unknown>) : {};
-  const msg = String(errObj.message || error || "").toLowerCase();
+  const rawMsg = String(errObj.message || errObj.error_description || error || "").trim();
+  const msg = rawMsg.toLowerCase();
   const status = Number(errObj.status || 0);
   const code = String(errObj.code || "").toLowerCase();
 
-  // 1. Email Rate Limit Exceeded (HTTP 429 / Supabase Auth Rate Limit)
+  // 1. Email Not Confirmed / Verification Pending
+  if (
+    code === "email_not_confirmed" ||
+    msg.includes("email not confirmed") ||
+    msg.includes("requires email verification") ||
+    msg.includes("confirmation link")
+  ) {
+    return {
+      message: "Please verify your email address before signing in. Check your email inbox for the verification link.",
+      code: "EMAIL_NOT_CONFIRMED",
+      isRateLimit: false,
+      isNetworkError: false,
+    };
+  }
+
+  // 2. Email Rate Limit Exceeded (HTTP 429 / Supabase Auth Rate Limit)
   if (
     status === 429 ||
     code === "over_email_send_rate_limit" ||
+    code === "rate_limit_exceeded" ||
     msg.includes("rate limit") ||
     msg.includes("too many requests") ||
     msg.includes("email rate limit exceeded")
   ) {
     return {
-      message: "Registration request limit reached. Please wait a few minutes before trying again or contact support.",
+      message: "Authentication attempt limit reached. Please wait 2-3 minutes before trying again.",
       code: "RATE_LIMIT_EXCEEDED",
       isRateLimit: true,
       isNetworkError: false,
     };
   }
 
-  // 2. Email Already Registered / Duplicate Account
+  // 3. Email Already Registered / Duplicate Account
   if (
     code === "user_already_exists" ||
     msg.includes("already registered") ||
@@ -80,7 +98,38 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     };
   }
 
-  // 3. Invalid Email Format
+  // 4. Invalid Login Credentials / Incorrect Password / Invalid Grant
+  if (
+    code === "invalid_credentials" ||
+    code === "invalid_grant" ||
+    msg.includes("invalid login credentials") ||
+    msg.includes("invalid email or password") ||
+    msg.includes("invalid credentials") ||
+    msg.includes("invalid grant")
+  ) {
+    return {
+      message: "Invalid email address or security passcode. Please check your credentials and try again.",
+      code: "INVALID_CREDENTIALS",
+      isRateLimit: false,
+      isNetworkError: false,
+    };
+  }
+
+  // 5. User Not Found
+  if (
+    code === "user_not_found" ||
+    msg.includes("user not found") ||
+    msg.includes("no user found")
+  ) {
+    return {
+      message: "No registered account found with this email address. Please register first.",
+      code: "USER_NOT_FOUND",
+      isRateLimit: false,
+      isNetworkError: false,
+    };
+  }
+
+  // 6. Invalid Email Format
   if (
     code === "validation_failed" ||
     msg.includes("invalid email") ||
@@ -95,7 +144,7 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     };
   }
 
-  // 4. Weak Password / Passcode Criteria
+  // 7. Weak Password / Passcode Criteria
   if (
     code === "weak_password" ||
     msg.includes("password should be at least") ||
@@ -110,21 +159,7 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     };
   }
 
-  // 5. Invalid Login Credentials
-  if (
-    code === "invalid_credentials" ||
-    msg.includes("invalid login credentials") ||
-    msg.includes("invalid email or password")
-  ) {
-    return {
-      message: "Invalid email address or passcode. Please check your credentials and try again.",
-      code: "INVALID_CREDENTIALS",
-      isRateLimit: false,
-      isNetworkError: false,
-    };
-  }
-
-  // 6. Network Failure / Disconnected
+  // 8. Network Failure / Disconnected
   if (
     !navigator.onLine ||
     msg.includes("failed to fetch") ||
@@ -132,14 +167,14 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     msg.includes("network error")
   ) {
     return {
-      message: "Network connection error. Please check your internet connection and try again.",
+      message: "Network connection error. TITAN could not reach the authentication service. Please check your internet connection.",
       code: "NETWORK_ERROR",
       isRateLimit: false,
       isNetworkError: true,
     };
   }
 
-  // 7. Timeout / Service Unavailable (500, 502, 503, 504)
+  // 9. Timeout / Service Unavailable (500, 502, 503, 504)
   if (status >= 500 || msg.includes("timeout") || msg.includes("gateway")) {
     return {
       message: "Authentication service is temporarily unavailable. Please try again in a moment.",
@@ -149,7 +184,16 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     };
   }
 
-  // 8. Fallback Human Readable Error
+  // 10. Direct Supabase Message Fallback (No generic masking if Supabase returned a clear message)
+  if (rawMsg && rawMsg.length > 3) {
+    return {
+      message: rawMsg,
+      code: code || "SUPABASE_AUTH_ERROR",
+      isRateLimit: false,
+      isNetworkError: false,
+    };
+  }
+
   return {
     message: "An unexpected error occurred during authentication. Please try again.",
     code: "UNEXPECTED_ERROR",

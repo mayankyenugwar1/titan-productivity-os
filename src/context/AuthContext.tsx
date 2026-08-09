@@ -112,6 +112,12 @@ export function AuthProvider({
         return { error: friendly };
       }
 
+      if (response.data.session) {
+        setSession(response.data.session);
+        setUser(response.data.user ?? response.data.session.user ?? null);
+        setLoading(false);
+      }
+
       return {
         data: {
           user: response.data.user,
@@ -152,6 +158,12 @@ export function AuthProvider({
       if (response.error) {
         const friendly = parseAuthError(response.error, cleanEmail);
         return { error: friendly };
+      }
+
+      if (response.data.session) {
+        setSession(response.data.session);
+        setUser(response.data.user ?? response.data.session.user ?? null);
+        setLoading(false);
       }
 
       // Check if email confirmation is enabled in Supabase
