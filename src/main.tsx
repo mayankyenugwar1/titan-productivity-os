@@ -16,8 +16,8 @@ initProductionMonitoring();
 // Automatic PWA Service Worker Registration & Update Detection
 const updateSW = registerSW({
   onNeedRefresh() {
-    console.log("[TITAN PWA] New version available. Refreshing service worker...");
-    void updateSW(true);
+    console.log("[TITAN PWA] New version available. Dispatching update event...");
+    window.dispatchEvent(new CustomEvent("titan-pwa-update-available", { detail: { updateSW } }));
   },
   onOfflineReady() {
     console.log("[TITAN PWA] App is ready for offline usage.");
