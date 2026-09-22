@@ -161,12 +161,15 @@ export function parseAuthError(error: unknown, emailContext?: string): FriendlyA
     };
   }
 
-  // 8. Network Failure / Disconnected
+  // 8. Network Failure / Disconnected (only when no HTTP response status was received)
   if (
-    !navigator.onLine ||
-    msg.includes("failed to fetch") ||
-    msg.includes("networkerror") ||
-    msg.includes("network error")
+    status === 0 &&
+    (!navigator.onLine ||
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("network error") ||
+      msg.includes("err_name_not_resolved") ||
+      msg.includes("enotfound"))
   ) {
     return {
       message: "Network connection error. TITAN could not reach the authentication service. Please check your internet connection.",

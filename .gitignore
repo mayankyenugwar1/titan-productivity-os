@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build binaries and temporary archives
+*.zip
+dist-apk/
+gradle-dist/
+gradle-dist-813/
+android/
+capacitor.config.ts
